@@ -212,6 +212,9 @@ with col_main:
 
     if stop_btn:
         st.session_state.is_streaming = False
+        if getattr(st.session_state, "streamer", None):
+            st.session_state.streamer.stop()
+            st.session_state.streamer = None
         st.rerun()
 
     # Status indicator
@@ -235,7 +238,11 @@ with col_main:
             transcript_queue = queue.Queue()
             error_queue = queue.Queue()
 
+            if getattr(st.session_state, "streamer", None):
+                st.session_state.streamer.stop()
+
             streamer = AssemblyAIStreamer(api_key, transcript_queue, error_queue)
+            st.session_state.streamer = streamer
             streamer.start_in_thread()
 
             start_time = time.time()

@@ -22,6 +22,22 @@ class AssemblyAIStreamer:
         self.api_key = api_key
         self.transcript_queue = transcript_queue
         self.error_queue = error_queue
+        self.is_streaming = False
+        self.client = None
+        self.audio_stream = None
+        self.pyaudio_instance = None
+        self.stream_thread = None
+
+    def _setup_pyaudio(self):
+        import pyaudio
+        self.pyaudio_instance = pyaudio.PyAudio()
+        self.audio_stream = self.pyaudio_instance.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=16000,
+            input=True,
+            frames_per_buffer=3200
+        )
 
     def run_stream(self):
         def on_begin(client, event: BeginEvent):
@@ -47,19 +63,21 @@ class AssemblyAIStreamer:
             self.error_queue.put(str(error))
 
         try:
-            client = StreamingClient(
+            self._setup_pyaudio()
+            
+            self.client = StreamingClient(
                 StreamingClientOptions(
                     api_key=self.api_key,
                     api_host="streaming.assemblyai.com",
                 )
             )
-            client.on(StreamingEvents.Begin, on_begin)
-            client.on(StreamingEvents.Turn, on_turn)
-            client.on(StreamingEvents.Termination, on_terminated)
-            client.on(StreamingEvents.Error, on_error)
+            self.client.on(StreamingEvents.Begin, on_begin)
+            self.client.on(StreamingEvents.Turn, on_turn)
+            self.client.on(StreamingEvents.Termination, on_terminated)
+            self.client.on(StreamingEvents.Error, on_error)
 
             # Following best practices: optimize latency
-            client.connect(
+            self.client.connect(
                 StreamingParameters(
                     speech_model="u3-rt-pro",
                     sample_rate=16000,
@@ -67,14 +85,43 @@ class AssemblyAIStreamer:
                 )
             )
 
-            client.stream(
-                aai.extras.MicrophoneStream(sample_rate=16000)
-            )
+            # Feed the websocket incrementally
+            while self.is_streaming:
+                try:
+                    data = self.audio_stream.read(3200, exception_on_overflow=False)
+                    self.client.send_audio(data)
+                except Exception as e:
+                    break
+
         except Exception as e:
             self.error_queue.put(str(e))
+        finally:
+            self.stop()
 
     def start_in_thread(self):
         """Starts the audio streaming in a background daemon thread."""
-        stream_thread = threading.Thread(target=self.run_stream, daemon=True)
-        stream_thread.start()
-        return stream_thread
+        self.is_streaming = True
+        self.stream_thread = threading.Thread(target=self.run_stream, daemon=True)
+        self.stream_thread.start()
+        return self.stream_thread
+
+    def stop(self):
+        """Cleanly releases the audio interface and websocket."""
+        self.is_streaming = False
+        try:
+            if self.client:
+                self.client.close()
+        except: pass
+        
+        try:
+            if self.audio_stream:
+                self.audio_stream.stop_stream()
+                self.audio_stream.close()
+            if self.pyaudio_instance:
+                self.pyaudio_instance.terminate()
+        except: pass
+
+        self.client = None
+        self.audio_stream = None
+        self.pyaudio_instance = None
+
