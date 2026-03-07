@@ -56,16 +56,7 @@ public class Spanglish {
     private Thread audioThread;
 
     public static void main(String[] args) {
-        // ============================================================================
-        // BUG FIX #2: Changed "StreamingTranscription" to "Spanglish"
-        //
-        // REASON: The class is named "Spanglish" (line 21) but main() was
-        // instantiating "StreamingTranscription" which doesn't exist.
-        // This is a compilation error — the code would never run.
-        // ============================================================================
         Spanglish transcription = new Spanglish();
-        // ORIGINAL (BROKEN):
-        // StreamingTranscription transcription = new StreamingTranscription();
         transcription.run();
     }
 
