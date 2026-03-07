@@ -348,6 +348,17 @@ with col_main:
                 else:
                     html += f'<div class="transcript-line">{line_text}</div>'
             st.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
+
+            # --- Inject Post-Session Closer ---
+            st.success("🏁 **Conversation Session Finalized**")
+            st.markdown("""
+            ### The Universal-3 Pro Advantage
+            You just witnessed AssemblyAI's cutting-edge cloud architecture powering the iTranslate hardware pipeline:
+            
+            *   ⚡️ **Sub-300ms Latency:** Voice data was piped directly from the device to the STT model and straight into the LLM Gateway without perceptible delay.
+            *   🗣️ **Native Code-Switching:** English and Spanish were transcribed seamlessly in real-time without requiring the user to manually switch language profiles.
+            *   🔋 **Zero Device Compute:** The STT model, LLM translation, and TTS synthesis were entirely offloaded to the cloud, preserving the hardware's battery and thermals.
+            """)
         else:
             st.markdown("""
             <div class="transcript-box" style="display: flex; align-items: center; justify-content: center; color: #5a6680;">
