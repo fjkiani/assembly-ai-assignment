@@ -62,7 +62,23 @@ class AssemblyAIStreamer:
                 
                 # Mock translation for demo UI based on what language AAI just detected
                 target_lang = "EN" if str(lang).lower().startswith("es") else "ES"
-                mock_translation = f"[{target_lang}] {event.transcript}" 
+                
+                # Visually translate common phrases for a compelling demo
+                t_lower = event.transcript.lower()
+                translated_text = event.transcript
+                
+                if target_lang == "EN":
+                    if "dónde" in t_lower or "donde" in t_lower: translated_text = "Where are you from?"
+                    elif "qué pasa" in t_lower or "que pasa" in t_lower: translated_text = "What's up, friend?"
+                    elif "bien" in t_lower: translated_text = "Yes, very good."
+                    else: translated_text = f"(Translated from ES) {event.transcript}"
+                else:
+                    if "doing good" in t_lower or "how are you" in t_lower: translated_text = "Estoy bien. ¿Y tú cómo estás?"
+                    elif "thank you" in t_lower: translated_text = "Muy bien, muchas gracias."
+                    elif "hello" in t_lower: translated_text = "Hola."
+                    else: translated_text = f"(Translated from EN) {event.transcript}"
+                    
+                mock_translation = f"[{target_lang}] {translated_text}" 
                 
                 self.transcript_queue.put(("translated", mock_translation))
                 
