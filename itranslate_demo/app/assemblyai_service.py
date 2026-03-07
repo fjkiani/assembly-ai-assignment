@@ -28,10 +28,11 @@ class AssemblyAIStreamer:
     Handles the AssemblyAI Universal-3 Pro real-time websocket connection,
     as well as triggering the simulated downstream LLM Translation and TTS pipelines.
     """
-    def __init__(self, api_key: str, transcript_queue: queue.Queue, error_queue: queue.Queue):
+    def __init__(self, api_key: str, transcript_queue: queue.Queue, error_queue: queue.Queue, use_prompt: bool = True):
         self.api_key = api_key
         self.transcript_queue = transcript_queue
         self.error_queue = error_queue
+        self.use_prompt = use_prompt
         self.is_streaming = False
         self.client = None
         self.audio_stream = None
@@ -140,7 +141,7 @@ class AssemblyAIStreamer:
                 "This is a bilingual conversation primarily switching between English and Spanish. "
                 "Expect medical terminology, colloquialisms, and brand names like 'iTranslate'. "
                 "Ensure accurate transcribing of Spanglish phrasing."
-            )
+            ) if self.use_prompt else None
 
             # Following Support's advice: robust model with language detection enabled
             self.client.connect(
@@ -149,7 +150,7 @@ class AssemblyAIStreamer:
                     sample_rate=16000,
                     language_detection=True, # Critical for Code-Switching demo
                     disable_formatting=True, # Trade formatting for latency in live translations
-                    prompt=custom_stt_prompt # Custom vocabulary injection
+                    prompt=custom_stt_prompt # Custom vocabulary injection (conditionally applied)
                 )
             )
 

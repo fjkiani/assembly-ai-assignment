@@ -208,6 +208,9 @@ with col_main:
 
     api_key = os.environ.get("ASSEMBLYAI_API_KEY", "")
 
+    st.markdown("#### Engine Tuning (AE Controls)")
+    use_stt_prompt = st.toggle("Enable Universal-3 Pro STT Prompting (Inject Medical/iTranslate Jargon)", value=True, help="When enabled, biases the STT translation towards Spanglish and iTranslate vocabulary.")
+
     with c1:
         start_btn = st.button("🎤 Start Listening", type="primary", use_container_width=True, disabled=st.session_state.is_streaming)
     with c2:
@@ -253,7 +256,12 @@ with col_main:
             if getattr(st.session_state, "streamer", None):
                 st.session_state.streamer.stop()
 
-            streamer = AssemblyAIStreamer(api_key, transcript_queue, error_queue)
+            streamer = AssemblyAIStreamer(
+                api_key=api_key, 
+                transcript_queue=transcript_queue, 
+                error_queue=error_queue,
+                use_prompt=use_stt_prompt
+            )
             st.session_state.streamer = streamer
             streamer.start_in_thread()
 
