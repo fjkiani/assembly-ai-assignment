@@ -265,19 +265,29 @@ with col_main:
                     if msg[0] == "turn":
                         text = msg[1]
                         is_final = msg[2]
+                        lang = msg[3] if len(msg) > 3 else "en"
                         
                         if is_final and text.strip():
-                            lines.append((text, "STT"))
+                            lines.append((text, "STT", lang, 0.0))
                             st.session_state.turn_count += 1
                         
                         display_lines = lines[-15:]  # Keep last 15 actions
                         html = ""
-                        for line_text, state in display_lines:
+                        for line_item in display_lines:
+                            # Handle both old 2-tuple and new 4-tuple formats
+                            if len(line_item) == 2:
+                                line_text, state = line_item
+                                line_lang, latency = "en", 0.0
+                            else:
+                                line_text, state, line_lang, latency = line_item
+                                
                             color = pipeline_states.get(state, "#ccd6f6")
                             if state == "STT":
-                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text}</div>'
+                                meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[Detected: {str(line_lang).upper()}]</span>'
+                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text} {meta_badge}</div>'
                             elif state == "LLM":
-                                html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text}</div>'
+                                meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[STT Latency: {latency*1000:.0f}ms]</span>' if latency > 0 else ""
+                                html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text} {meta_badge}</div>'
                             elif state == "TTS":
                                 html += f'<div class="transcript-line" style="border-left: 2px solid {color}; padding-left: 10px;"><span class="badge" style="color:{color}; border-color:{color};">TTS Audio</span> <em>Synthesized and streamed to device</em> 🔊</div>'
                                 
@@ -287,22 +297,38 @@ with col_main:
                         transcript_container.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
 
                     elif msg[0] == "translating":
-                        # Add a loading state for translation
+                        lang = msg[2] if len(msg) > 2 else "en"
+                        latency = msg[3] if len(msg) > 3 else 0.0
+                        
                         html = ""
-                        for line_text, state in lines[-15:]:
+                        for line_item in lines[-15:]:
+                            if len(line_item) == 2:
+                                line_text, state = line_item
+                                line_lang, l_latency = "en", 0.0
+                            else:
+                                line_text, state, line_lang, l_latency = line_item
+                                
                             color = pipeline_states.get(state, "#ccd6f6")
                             if state == "STT":
-                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text}</div>'
+                                meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[Detected: {str(line_lang).upper()}]</span>'
+                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text} {meta_badge}</div>'
                             else:
                                 html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">{state}</span> {line_text}</div>'
-                        html += f'<div class="transcript-line" style="color: #00d2ff; font-style: italic;"><span class="pulse-dot" style="background:#00d2ff;"></span> Translating via LLM Gateway...</div>'
+                        
+                        latency_print = f"  (STT Latency: {latency*1000:.0f}ms)" if latency > 0 else ""
+                        html += f'<div class="transcript-line" style="color: #00d2ff; font-style: italic;"><span class="pulse-dot" style="background:#00d2ff;"></span> Translating {str(lang).upper()} via LLM Gateway...{latency_print}</div>'
+                        
+                        # Store the latency temporarily so the "translated" event can append it
+                        st.session_state._last_latency = latency
+                        
                         transcript_container.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
 
                     elif msg[0] == "translated":
-                        lines.append((msg[1], "LLM"))
+                        latency = getattr(st.session_state, "_last_latency", 0.0)
+                        lines.append((msg[1], "LLM", "en", latency))
                         
                     elif msg[0] == "tts":
-                        lines.append((msg[1], "TTS"))
+                        lines.append((msg[1], "TTS", "en", 0.0))
 
                     elif msg[0] == "status":
                         status_text.markdown(f"*{msg[1]}*")
@@ -337,12 +363,20 @@ with col_main:
                 "TTS": "#b678ff"
             }
             html = ""
-            for line_text, state in st.session_state.transcripts:
+            for line_item in st.session_state.transcripts:
+                if len(line_item) == 2:
+                    line_text, state = line_item
+                    line_lang, latency = "en", 0.0
+                else:
+                    line_text, state, line_lang, latency = line_item
+                    
                 color = pipeline_states.get(state, "#ccd6f6")
                 if state == "STT":
-                    html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text}</div>'
+                    meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[Detected: {str(line_lang).upper()}]</span>'
+                    html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text} {meta_badge}</div>'
                 elif state == "LLM":
-                    html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text}</div>'
+                    meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[STT Latency: {latency*1000:.0f}ms]</span>' if latency > 0 else ""
+                    html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text} {meta_badge}</div>'
                 elif state == "TTS":
                     html += f'<div class="transcript-line" style="border-left: 2px solid {color}; padding-left: 10px;"><span class="badge" style="color:{color}; border-color:{color};">TTS Audio</span> <em>Synthesized and streamed to device</em> 🔊</div>'
                 else:

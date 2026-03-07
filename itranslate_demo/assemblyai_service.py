@@ -27,6 +27,7 @@ class AssemblyAIStreamer:
         self.audio_stream = None
         self.pyaudio_instance = None
         self.stream_thread = None
+        self.turn_start_time = None
 
     def _setup_pyaudio(self):
         import pyaudio
@@ -44,17 +45,30 @@ class AssemblyAIStreamer:
             self.transcript_queue.put(("status", f"Session started: {event.id}"))
 
         def on_turn(client, event: TurnEvent):
-            self.transcript_queue.put(("turn", event.transcript, event.end_of_turn))
+            if self.turn_start_time is None and event.transcript.strip():
+                self.turn_start_time = time.time()
+                
+            lang = getattr(event, 'language_code', 'en')
+            
+            # Send the turn structure with dynamic metadata
+            self.transcript_queue.put(("turn", event.transcript, event.end_of_turn, lang))
             
             # If this turn is finalized, trigger the simulated LLM Gateway pipeline
             if event.end_of_turn and event.transcript.strip():
-                self.transcript_queue.put(("translating", ""))
+                calc_latency = (time.time() - self.turn_start_time) if self.turn_start_time else 0.0
+                
+                self.transcript_queue.put(("translating", "", lang, calc_latency))
                 time.sleep(0.4) # Simulate LLM Gateway API call
-                mock_translation = f"[ES] {event.transcript}" # Mock translation for demo UI
+                
+                # Mock translation for demo UI based on what language AAI just detected
+                target_lang = "EN" if str(lang).lower().startswith("es") else "ES"
+                mock_translation = f"[{target_lang}] {event.transcript}" 
+                
                 self.transcript_queue.put(("translated", mock_translation))
                 
                 time.sleep(0.3) # Simulate TTS Synthesis API call
                 self.transcript_queue.put(("tts", "Audio ready"))
+                self.turn_start_time = None
 
         def on_terminated(client, event: TerminationEvent):
             self.transcript_queue.put(("terminated", f"{event.audio_duration_seconds:.1f}s processed"))
