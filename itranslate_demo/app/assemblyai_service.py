@@ -106,11 +106,12 @@ class AssemblyAIStreamer:
             self.client.on(StreamingEvents.Termination, on_terminated)
             self.client.on(StreamingEvents.Error, on_error)
 
-            # Following best practices: optimize latency
+            # Following best practices: optimize latency and enable code-switching metadata
             self.client.connect(
                 StreamingParameters(
                     speech_model="u3-rt-pro",
                     sample_rate=16000,
+                    enable_language_identification=True, # Critical for Code-Switching demo
                     disable_formatting=True # Trade formatting for latency in live translations
                 )
             )
