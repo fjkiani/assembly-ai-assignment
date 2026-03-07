@@ -27,24 +27,14 @@ public class Spanglish {
     private static final int SAMPLE_SIZE_IN_BITS = 16;
     private static final int FRAMES_PER_BUFFER = 400; // 25ms of audio (0.025s * 16000Hz)
 
-    // ============================================================================
-    // BUG FIX #1: Changed "encoding=opus" to "encoding=pcm_s16le"
-    //
-    // REASON: The AudioFormat below (line ~98) creates raw 16-bit signed
-    // little-endian PCM audio. That is "pcm_s16le". The original code said
-    // "encoding=opus", but Opus is a compressed codec. Sending raw PCM bytes
-    // to a server expecting compressed Opus frames causes immediate failure.
-    //
-    // Source: AssemblyAI Streaming docs confirm pcm_s16le and pcm_mulaw are
-    // the supported encodings for raw audio streams.
-    // https://www.assemblyai.com/docs/speech-to-text/streaming
-    // ============================================================================
+    // BUG FIX: encoding=opus → encoding=pcm_s16le
+    // Mic outputs raw PCM (see AudioFormat below), not compressed Opus.
+    // Docs: https://www.assemblyai.com/docs/streaming
     private static final String API_ENDPOINT = String.format(
         "wss://streaming.assemblyai.com/v3/ws?sample_rate=%d&encoding=pcm_s16le&format_turns=true",
         SAMPLE_RATE
     );
-    // ORIGINAL (BROKEN):
-    // "wss://streaming.assemblyai.com/v3/ws?sample_rate=%d&encoding=opus&format_turns=true"
+    // ORIGINAL: encoding=opus  ← causes immediate connection failure
 
     // Audio recording
     private TargetDataLine microphone;
@@ -90,8 +80,8 @@ public class Spanglish {
             SAMPLE_RATE,
             SAMPLE_SIZE_IN_BITS,
             CHANNELS,
-            true,  // signed
-            false  // little endian  ← this IS pcm_s16le
+            true,   // signed
+            false   // little-endian → pcm_s16le
         );
 
         DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
@@ -107,11 +97,7 @@ public class Spanglish {
     private void connectWebSocket() throws Exception {
         URI uri = new URI(API_ENDPOINT);
         Map<String, String> headers = new HashMap<>();
-        // ============================================================================
-        // NOTE: Hardcoding an API key in client-side code is a security risk.
-        // In production, generate a temporary auth token from a backend server.
-        // See: https://www.assemblyai.com/docs/streaming#authenticate-with-a-temporary-token
-        // ============================================================================
+        // In production: use a temporary auth token, not an API key.
         headers.put("Authorization", API_KEY);
 
         wsClient = new AssemblyAIWebSocketClient(uri, headers);
@@ -139,12 +125,7 @@ public class Spanglish {
 
                         // Send to WebSocket
                         if (wsClient != null && wsClient.isOpen()) {
-                            // ============================================================================
-                            // NOTE: The v3 streaming API accepts raw binary audio frames over websocket.
-                            // The encoding is specified in the connection URL params, so the server
-                            // knows how to decode the bytes we send here.
-                            // ============================================================================
-                            wsClient.send(audioData);
+                            wsClient.send(audioData); // raw binary frames — encoding set in URL
                         }
                     }
                 } catch (Exception e) {
