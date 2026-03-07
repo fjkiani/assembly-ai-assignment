@@ -150,14 +150,20 @@ class AssemblyAIStreamer:
             #   recognized accurately — directly improving downstream translation quality.
             # ================================================================
             
-            # Domain-specific terms that the STT model should boost recognition for.
-            # These are the exact words/phrases that matter most for iTranslate's use case.
+            # Domain-specific terms covering BOTH take-home scenarios:
+            #   Part 1 (iTranslate): translation hardware device
+            #   Part 2 (Spanglish Inc.): bilingual court reporting with interpreters
             itranslate_keyterms = [
-                "iTranslate", "Pocketalk",
-                "hola", "buenos días", "por favor", "gracias",
-                "hospital", "emergencia", "doctor", "farmacia",
-                "prescripción", "diagnóstico", "alergia",
-                "pasaporte", "aeropuerto", "reservación",
+                # Brand names
+                "iTranslate", "Spanglish", "AssemblyAI",
+                # Court / legal (English)
+                "defendant", "plaintiff", "objection", "testimony",
+                "verdict", "counsel", "interpreter", "sustained",
+                # Court / legal (Spanish)
+                "demandado", "testigo", "abogado", "declaración",
+                "juez", "culpable", "inocente",
+                # Interpreter phrases
+                "for the record", "the witness stated",
             ] if self.use_prompt else None
 
             # Build connection parameters

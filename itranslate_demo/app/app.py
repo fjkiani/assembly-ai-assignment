@@ -211,15 +211,15 @@ with col_main:
     st.markdown("""#### 🎛️ STT Tuning: Universal-3 Pro Keyterms Prompting
 <small style="color: #8892b0;">Universal-3 Pro supports <b>Keyterms Prompting</b> — a word-level and turn-level boosting engine 
 that biases the speech model to accurately recognize domain-specific vocabulary during live inference. 
-This directly improves downstream translation quality by ensuring the LLM receives correct source text.</small>
+This demo targets <b>both</b> take-home scenarios: iTranslate's translation device and Spanglish Inc.'s bilingual court reporting.</small>
 """, unsafe_allow_html=True)
     use_stt_prompt = st.toggle(
-        "Boost iTranslate Domain Terms (medical, travel, brand names)", 
+        "Boost Domain Terms (legal, interpreter, brand names)", 
         value=True, 
-        help="When ON: injects 15 domain-specific keyterms (e.g., 'iTranslate', 'diagnóstico', 'emergencia') into the STT model via keyterms_prompt. The model boosts these terms at both word-level (during inference) and turn-level (post-processing). When OFF: uses the default Universal-3 Pro baseline with no term boosting."
+        help="When ON: injects 19 domain-specific keyterms covering court proceedings (defendant, testimony, objection, demandado, testigo, abogado) and brand names (iTranslate, Spanglish, AssemblyAI) into the STT model via keyterms_prompt. When OFF: baseline Universal-3 Pro with no term boosting."
     )
     if use_stt_prompt:
-        st.caption("✅ Keyterms active: iTranslate, Pocketalk, hospital, emergencia, diagnóstico, farmacia...")
+        st.caption("✅ Keyterms active: defendant, testimony, objection, demandado, testigo, abogado, iTranslate, Spanglish...")
     else:
         st.caption("⚪ Baseline mode — no domain term boosting")
 
