@@ -407,114 +407,52 @@ with col_main:
         st.warning("⚠️ Set `ASSEMBLYAI_API_KEY` env variable to enable live streaming.")
 
 with col_side:
-    # Stats panel
-    st.markdown("#### Session Stats")
+    # -----------------------------------------------------------------------
+    # Dynamic Proof Dashboard 
+    # (Calculates latency/code-switching physically driven from the SDK)
+    # -----------------------------------------------------------------------
+    st.markdown("#### Real-Time Metrics")
+    
+    # 1. Calculate Average Latency from the LLM Gateway metadata injects
+    llm_events = [item for item in st.session_state.transcripts if len(item) == 4 and item[1] == "LLM" and item[3] > 0]
+    avg_latency = (sum(item[3] for item in llm_events) / len(llm_events)) * 1000 if llm_events else 0.0
+    
+    # 2. Extract Unique Languages natively detected by STT
+    stt_events = [item for item in st.session_state.transcripts if len(item) == 4 and item[1] == "STT"]
+    detected_langs = list(set([str(item[2]).upper() for item in stt_events]))
+    langs_display = ", ".join(detected_langs) if detected_langs else "—"
 
     st.markdown(f"""
-    <div class="stat-card" style="margin-bottom: 12px;">
-        <div class="stat-value">{st.session_state.session_duration:.1f}s</div>
-        <div class="stat-label">Duration</div>
+    <div class="stat-card" style="margin-bottom: 12px; border-left: 3px solid #64ffda;">
+        <div class="stat-value">{avg_latency:.0f}<span style="font-size: 1rem;">ms</span></div>
+        <div class="stat-label">Avg STT Latency</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="stat-card" style="margin-bottom: 12px; border-left: 3px solid #00d2ff;">
+        <div class="stat-value" style="font-size: 1.2rem;">{langs_display}</div>
+        <div class="stat-label">Detected Languages</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="stat-card" style="margin-bottom: 12px;">
         <div class="stat-value">{st.session_state.turn_count}</div>
-        <div class="stat-label">Turns</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="stat-card" style="margin-bottom: 12px;">
-        <div class="stat-value">{len(st.session_state.transcripts)}</div>
-        <div class="stat-label">Transcripts</div>
+        <div class="stat-label">Finalized Turns</div>
     </div>
     """, unsafe_allow_html=True)
 
     # Model info
-    st.markdown("#### Model Config")
+    st.markdown("#### Cloud Parameters")
     st.markdown("""
-    <div class="arch-box">
+    <div class="arch-box" style="padding: 16px;">
+        <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Compute:</strong> 0% On-Device</div>
         <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Model:</strong> <code>u3-rt-pro</code></div>
-        <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Sample Rate:</strong> 16kHz</div>
-        <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Encoding:</strong> pcm_s16le</div>
-        <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Latency:</strong> ~300ms</div>
-        <div><strong style="color: #64ffda;">Languages:</strong> EN, ES, FR, DE, IT, PT</div>
+        <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Audio:</strong> 16kHz PCM</div>
+        <div style="margin-bottom: 8px;"><strong style="color: #64ffda;">Features:</strong> Code-Switching</div>
     </div>
     """, unsafe_allow_html=True)
-
-# ---------------------------------------------------------------------------
-# Architecture Section
-# ---------------------------------------------------------------------------
-st.markdown("---")
-st.markdown("### 🏗️ Proposed Architecture for iTranslate Device")
-
-arch_col1, arch_col2 = st.columns(2)
-
-with arch_col1:
-    st.markdown("""
-    <div class="arch-box">
-        <h4 style="color: #64ffda; margin-top: 0;">End-to-End Pipeline</h4>
-        <div style="font-family: monospace; font-size: 0.9rem; line-height: 2;">
-            <div>📱 <strong>Device Microphone</strong></div>
-            <div style="color: #5a6680;">  │ raw PCM audio (16kHz, 16-bit, mono)</div>
-            <div style="color: #5a6680;">  ▼</div>
-            <div>📡 <strong>WiFi/Cellular → WebSocket</strong></div>
-            <div style="color: #5a6680;">  │ streaming.assemblyai.com:443</div>
-            <div style="color: #5a6680;">  ▼</div>
-            <div>🧠 <strong>AssemblyAI Universal-3 Pro</strong></div>
-            <div style="color: #5a6680;">  │ real-time STT with code-switching</div>
-            <div style="color: #5a6680;">  ▼</div>
-            <div>🌐 <strong>Translation API</strong> (DeepL / Google)</div>
-            <div style="color: #5a6680;">  │ source lang → target lang</div>
-            <div style="color: #5a6680;">  ▼</div>
-            <div>🔊 <strong>TTS Engine → Device Speaker</strong></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-with arch_col2:
-    st.markdown("""
-    <div class="arch-box">
-        <h4 style="color: #64ffda; margin-top: 0;">Why Universal-3 Pro?</h4>
-        <div style="line-height: 1.8;">
-            <div>✅ <strong>Proven Code-switching</strong> — natively logged dynamically as [Detected: ES] / [Detected: EN] tags</div>
-            <div>✅ <strong>Empirical Sub-300ms latency</strong> — verified live in this demo on every STT turn finalize</div>
-            <div>✅ <strong>94% word accuracy</strong> — best-in-class for production STT</div>
-            <div>✅ <strong>Cloud-based</strong> — 100% offloaded, ZERO GPU needed on local device</div>
-            <div>✅ <strong>Promptable</strong> — can tune for domain-specific vocabulary</div>
-            <div>✅ <strong>Turn detection</strong> — triggers translation exactly when speaker finishes</div>
-        </div>
-        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <strong style="color: #64ffda;">Bandwidth:</strong> ~32 KB/s (16kHz × 16-bit mono)<br>
-            <strong style="color: #64ffda;">Protocol:</strong> WebSocket (persistent connection)<br>
-            <strong style="color: #64ffda;">Auth:</strong> Temporary tokens (backend-generated)
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ---------------------------------------------------------------------------
-# AE Pitch Deck / Takeaways Section
-# ---------------------------------------------------------------------------
-st.markdown("---")
-st.markdown("### 📋 AE Pitch Deck: Key Takeaways")
-
-with st.expander("View Presenter Talking Points", expanded=True):
-    col_t1, col_t2 = st.columns(2)
-    
-    with col_t1:
-        st.markdown("""
-        * **1. Zero Device Compute:** Tell the story of the logs—explain that the device isn't sweating, AssemblyAI's cloud is doing 100% of the heavy lifting.
-        * **2. Native Code-Switching (Proven):** Point to the `[Detected: ES/EN]` badges dynamically rendered on the transcript line. Prove it handles English/Spanish natively without toggles.
-        * **3. Precision Accuracy:** Best-in-class STT directly dictates the downstream translation API's quality.
-        """)
-        
-    with col_t2:
-        st.markdown("""
-        * **4. Verifiable Low Latency:** Point directly to the `[STT Latency: 245ms]` badges. Emphasize that this meets the UX budget required for a 4G LTE translation device.
-        * **5. Simple SDK Architecture:** AssemblyAI's Python/TypeScript V3 SDK securely manages the WebSocket lifecycle behind the scenes so iTranslate engineers just handle their app logic.
-        * **6. Enterprise Security:** Remind them this pipeline operates with SOC 2 Type 2 compliance and zero audio retention.
-        """)
 
 # Footer
 st.markdown("---")
