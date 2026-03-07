@@ -46,6 +46,21 @@ The design separates responsibilities between the **edge device** and a **cloud 
 
 ### Data Flow
 
+```mermaid
+sequenceDiagram
+    participant Device
+    participant STT as Universal-3 Pro
+    participant LLM as Cohere
+    participant TTS
+
+    Device->>STT: Stream PCM (16kHz mono)
+    STT->>STT: Transcribe + detect language
+    Note over STT: Speaker finishes
+    STT->>LLM: TurnEvent (transcript, lang_code)
+    LLM->>TTS: Translated text
+    TTS->>Device: Synthesized audio
+```
+
 1. Device captures 16 kHz mono PCM and streams it over WebSocket to AssemblyAI.
 2. Universal-3 Pro transcribes in real time, detects language, and emits **turn events** when the speaker finishes.
 3. On each turn, the orchestration layer receives transcript + language code and calls the LLM for translation.
@@ -120,9 +135,26 @@ Sub-second latency is acceptable for handheld translation devices and aligns wit
 
 ### Security
 
+```mermaid
+flowchart LR
+    Device["Device"] -->|"1. Request token"| Backend["Your Backend"]
+    Backend -->|"2. Temp token"| Device
+    Device -->|"3. Token (not API key)"| AAI["AssemblyAI"]
+```
+
 - Use **temporary auth tokens** issued by your backend for device sessions; do not ship API keys on the device. See [Temporary auth tokens](https://www.assemblyai.com/docs/streaming#authenticate-with-a-temporary-token).
 
 ### Resilience
+
+```mermaid
+stateDiagram-v2
+    [*] --> Connected
+    Connected --> Reconnecting: WebSocket drop
+    Reconnecting --> Connected: Backoff + retry
+    Connected --> Buffering: WiFi → cellular
+    Buffering --> Connected: Resume stream
+    Connected --> [*]: Session expiry
+```
 
 - **WebSocket reconnects:** Exponential backoff with local audio buffering during outages.
 - **Network handoff (WiFi → cellular):** Buffer mic input during the transition, then resume streaming.
