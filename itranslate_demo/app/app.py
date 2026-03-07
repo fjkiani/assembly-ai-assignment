@@ -14,10 +14,9 @@ import time
 import threading
 import queue
 import streamlit as st
-from dotenv import load_dotenv
 
-# Load API key from ../.env (repo root)
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
+# In Streamlit Cloud, variables set in "Advanced Settings > Secrets" 
+# are automatically injected into `os.environ` or available via `st.secrets`.
 
 # ---------------------------------------------------------------------------
 # Page Config
