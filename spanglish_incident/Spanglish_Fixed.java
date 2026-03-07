@@ -34,6 +34,7 @@ public class Spanglish {
         "wss://streaming.assemblyai.com/v3/ws?sample_rate=%d&encoding=pcm_s16le&format_turns=true",
         SAMPLE_RATE
     );
+    // "wss://streaming.assemblyai.com/v3/ws?sample_rate=%d&encoding=opus&format_turns=true"
     // ORIGINAL: encoding=opus  ← causes immediate connection failure
 
     // Audio recording

@@ -14,10 +14,12 @@ The Streaming API requires raw 16‑bit signed little‑endian PCM (`pcm_s16le`)
 In your Java code, the `AudioFormat` correctly captures raw 16-bit PCM audio. However, the WebSocket connection URL to AssemblyAI is currently configured with `"encoding": "opus"`. When our servers receive raw PCM bytes but expect compressed Opus frames (which AssemblyAI does not transcode for latency reasons), the stream immediately fails.
 
 **The Fix:** 
-1. **Enforce required audio format:** Update the encoding parameter in your URL from `"opus"` to `"pcm_s16le"`.
-2. **Send binary frames:** Ensure your WebSocket client sends binary frames (not JSON base64 chunks). Each frame should contain a small chunk of audio (e.g., 25 ms at 400 samples per frame).
-3. **Harden the WebSocket client:** Implement explicit open/close per call and deterministic teardown when a call ends to prevent timeouts under load. Add robust error handling and exponential back‑off on “too many new sessions” style responses.
-4. **Add observability:** Log the connection URL (without the token), timestamps, sample_rate, frame sizes, and any error codes from AssemblyAI.
+Change the encoding parameter in your WebSocket URL from `"opus"` to `"pcm_s16le"`. This is the only code change required — your `AudioFormat` and mic capture logic are correct.
+
+**Best practices for production:**
+*   Send binary WebSocket frames (not base64 JSON).
+*   Implement explicit session open/close and exponential backoff on rate-limit errors.
+*   Log connection URLs (without tokens), frame sizes, and any error codes for debugging.
 
 ### 2. Roadmap to 2,000 Concurrent Streams
 
