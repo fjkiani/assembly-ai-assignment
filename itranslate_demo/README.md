@@ -4,7 +4,10 @@ This directory contains the assets, documentation, and the deployable Streamlit 
 
 ## 🚀 Streamlit Cloud Deployment
 
-The interactive demo has been structured into the `app/` directory specifically for effortless deployment to [Streamlit Community Cloud](https://share.streamlit.io/) or platforms like Render/Heroku.
+The interactive demo is fully deployed and accessible via the web:
+**👉 Live Sales Demo:** [https://itranslate.streamlit.app](https://itranslate.streamlit.app)
+
+The source code for this demo has been structured into the `app/` directory specifically for effortless deployment to [Streamlit Community Cloud](https://share.streamlit.io/) or platforms like Render/Heroku.
 
 ### Deployment Instructions (Streamlit Cloud)
 1. Push this repository to GitHub.
