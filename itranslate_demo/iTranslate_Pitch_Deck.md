@@ -57,6 +57,15 @@
 ```python
 client = StreamingClient(StreamingClientOptions(api_key="...", api_host="streaming.assemblyai.com"))
 
+# Prime Universal-3 Pro with domain vocabulary via Text Prompting
+stt_prompt = "Bilingual conversation with medical terms and the word 'iTranslate'"
+client.connect(StreamingParameters(
+    speech_model="universal-streaming-multilingual",
+    language_detection=True,
+    prompt=stt_prompt,  # Custom vocabulary injection
+    sample_rate=16000,
+))
+
 def on_turn(self, event: TurnEvent):
     if event.end_of_turn: # Utterance ends
         text_es = translate_llm_gateway(event.transcript) # 1. Translate
@@ -81,12 +90,13 @@ def on_turn(self, event: TurnEvent):
 ---
 
 ## Slide 7: Live Technical Demo
-*(The AE boots up `itranslate_demo/streamlit_demo.py`)*
+*(The AE boots up `itranslate_demo/app/app.py`)*
 
 * **1. Hardware Simulation:** Capturing local mic audio live.
-* **2. STT Streaming Visualization:** Watch partials roll in instantly, finalizing with high accuracy.
-* **3. The Tri-State LLM Pipeline:** See the handoff from finalized STT `[STT]` ➔ the LLM Gateway translate trigger `[LLM]` ➔ and the Audio synthesis cue `[TTS]`.
-* **Takeaway:** This complex pipeline is achieved effortlessly over a single persistent AssemblyAI `StreamingClient` session.
+* **2. STT Prompt Toggle:** Show the "Engine Tuning" toggle—run the demo first with **Prompting OFF** (baseline), then toggle **ON** to inject iTranslate medical jargon into the STT layer. This visually proves the tuning capability.
+* **3. STT Streaming Visualization:** Watch partials roll in instantly, finalizing with high accuracy.
+* **4. The Tri-State LLM Pipeline:** See the handoff from finalized STT `[STT]` ➔ the LLM Gateway translate trigger `[LLM]` ➔ and the Audio synthesis cue `[TTS]`.
+* **Takeaway:** This pipeline is achieved over a single persistent `StreamingClient` session, with domain tuning controlled by a single `prompt=` parameter.
 
 ---
 
