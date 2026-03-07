@@ -41,9 +41,6 @@ class AssemblyAIStreamer:
         )
 
     def run_stream(self):
-        # We need to explicitly track the last *known* language so partials don't overwrite it with NONE.
-        self.last_known_lang = "en"
-
         def on_begin(client, event: BeginEvent):
             self.transcript_queue.put(("status", f"Session started: {event.id}"))
 
@@ -51,23 +48,22 @@ class AssemblyAIStreamer:
             if self.turn_start_time is None and event.transcript.strip():
                 self.turn_start_time = time.time()
                 
-            # Air Support: "When language detection is enabled, only turns with a complete utterance 
-            # or end_of_turn: true will include language_code... partials... may legitimately lack these fields."
-            if getattr(event, 'language_code', None):
-                self.last_known_lang = event.language_code
+            # Use None/unknown when language is not present on this event
+            lang = getattr(event, "language_code", None)
             
             # Send the turn structure with dynamic metadata
-            self.transcript_queue.put(("turn", event.transcript, event.end_of_turn, self.last_known_lang))
+            self.transcript_queue.put(("turn", event.transcript, event.end_of_turn, lang or "UNKNOWN"))
             
             # If this turn is finalized, trigger the simulated LLM Gateway pipeline
             if event.end_of_turn and event.transcript.strip():
                 calc_latency = (time.time() - self.turn_start_time) if self.turn_start_time else 0.0
                 
-                self.transcript_queue.put(("translating", "", self.last_known_lang, calc_latency))
+                self.transcript_queue.put(("translating", "", lang or "UNKNOWN", calc_latency))
                 time.sleep(0.4) # Simulate LLM Gateway API call
                 
                 # Mock translation for demo UI based on what language AAI just detected
-                target_lang = "EN" if str(self.last_known_lang).lower().startswith("es") else "ES"
+                is_spanish = isinstance(lang, str) and lang.lower().startswith("es")
+                target_lang = "EN" if is_spanish else "ES"
                 
                 # Visually translate common phrases for a compelling demo
                 t_lower = event.transcript.lower()
@@ -112,10 +108,10 @@ class AssemblyAIStreamer:
             self.client.on(StreamingEvents.Termination, on_terminated)
             self.client.on(StreamingEvents.Error, on_error)
 
-            # Following best practices: optimize latency and enable code-switching metadata
+            # Following Support's advice: robust model with language detection enabled
             self.client.connect(
                 StreamingParameters(
-                    speech_model="u3-rt-pro",
+                    speech_model="universal-streaming-multilingual",
                     sample_rate=16000,
                     language_detection=True, # Critical for Code-Switching demo
                     disable_formatting=True # Trade formatting for latency in live translations
