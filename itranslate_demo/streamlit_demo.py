@@ -438,6 +438,29 @@ with arch_col2:
     </div>
     """, unsafe_allow_html=True)
 
+# ---------------------------------------------------------------------------
+# AE Pitch Deck / Takeaways Section
+# ---------------------------------------------------------------------------
+st.markdown("---")
+st.markdown("### 📋 AE Pitch Deck: Key Takeaways")
+
+with st.expander("View Presenter Talking Points", expanded=True):
+    col_t1, col_t2 = st.columns(2)
+    
+    with col_t1:
+        st.markdown("""
+        * **1. Zero Device Compute:** Cloud architecture means no hardware limitations. Massive cost savings on device BOM (Bill of Materials) and easy scaling.
+        * **2. Native Code-Switching:** Universal-3 Pro natively handles English/Spanish mixing within single utterances. No manual toggling required.
+        * **3. Improved Accuracy:** Best-in-class real-time transcription directly dictates the quality of the downstream LLM translation.
+        """)
+        
+    with col_t2:
+        st.markdown("""
+        * **4. Low Latency Design:** Raw `pcm_s16le` + U3-Pro ensures the pipeline hits the '300ms rule' required for voice-agent UX over 4G LTE.
+        * **5. Easy Integration:** Official Python/TypeScript SDKs eliminate WebSocket complexity—focus on translation logic, not audio streaming infrastructure.
+        * **6. Enterprise Security:** SOC 2 Type 2 certified, with zero audio retention in the streaming API.
+        """)
+
 # Footer
 st.markdown("---")
 st.markdown("""
