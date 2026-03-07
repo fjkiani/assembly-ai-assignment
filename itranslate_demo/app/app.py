@@ -208,8 +208,20 @@ with col_main:
 
     api_key = os.environ.get("ASSEMBLYAI_API_KEY", "")
 
-    st.markdown("#### Engine Tuning (AE Controls)")
-    use_stt_prompt = st.toggle("Enable Universal-3 Pro STT Prompting (Inject Medical/iTranslate Jargon)", value=True, help="When enabled, biases the STT translation towards Spanglish and iTranslate vocabulary.")
+    st.markdown("""#### 🎛️ STT Tuning: Universal-3 Pro Keyterms Prompting
+<small style="color: #8892b0;">Universal-3 Pro supports <b>Keyterms Prompting</b> — a word-level and turn-level boosting engine 
+that biases the speech model to accurately recognize domain-specific vocabulary during live inference. 
+This directly improves downstream translation quality by ensuring the LLM receives correct source text.</small>
+""", unsafe_allow_html=True)
+    use_stt_prompt = st.toggle(
+        "Boost iTranslate Domain Terms (medical, travel, brand names)", 
+        value=True, 
+        help="When ON: injects 15 domain-specific keyterms (e.g., 'iTranslate', 'diagnóstico', 'emergencia') into the STT model via keyterms_prompt. The model boosts these terms at both word-level (during inference) and turn-level (post-processing). When OFF: uses the default Universal-3 Pro baseline with no term boosting."
+    )
+    if use_stt_prompt:
+        st.caption("✅ Keyterms active: iTranslate, Pocketalk, hospital, emergencia, diagnóstico, farmacia...")
+    else:
+        st.caption("⚪ Baseline mode — no domain term boosting")
 
     with c1:
         start_btn = st.button("🎤 Start Listening", type="primary", use_container_width=True, disabled=st.session_state.is_streaming)

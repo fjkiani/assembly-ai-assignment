@@ -135,24 +135,44 @@ class AssemblyAIStreamer:
             self.client.on(StreamingEvents.Termination, on_terminated)
             self.client.on(StreamingEvents.Error, on_error)
 
-            # Define a custom Prompt to bias Universal-3 Pro explicitly for Code-Switching 
-            # and iTranslate domain terminology, as supported by the v3 Streaming SDK.
-            custom_stt_prompt = (
-                "This is a bilingual conversation primarily switching between English and Spanish. "
-                "Expect medical terminology, colloquialisms, and brand names like 'iTranslate'. "
-                "Ensure accurate transcribing of Spanglish phrasing."
-            ) if self.use_prompt else None
+            # ================================================================
+            # UNIVERSAL-3 PRO: PROMPTING & KEYTERMS BOOSTING
+            # ================================================================
+            # Per AssemblyAI's Prompting Guide (https://assemblyai.com/docs/streaming/prompting):
+            #   - `prompt` is INSTRUCTIONAL: controls punctuation, disfluencies, formatting.
+            #     When omitted, a built-in default prompt delivers 88% turn detection accuracy.
+            #   - `keyterms_prompt` is for DOMAIN-SPECIFIC TERM BOOSTING: biases the model
+            #     at both word-level (during inference) and turn-level (post-processing).
+            #   - `prompt` and `keyterms_prompt` CANNOT be used simultaneously.
+            #
+            # For iTranslate's use case, `keyterms_prompt` is the higher-value lever:
+            #   it ensures brand names, medical terms, and multilingual phrases are
+            #   recognized accurately — directly improving downstream translation quality.
+            # ================================================================
+            
+            # Domain-specific terms that the STT model should boost recognition for.
+            # These are the exact words/phrases that matter most for iTranslate's use case.
+            itranslate_keyterms = [
+                "iTranslate", "Pocketalk",
+                "hola", "buenos días", "por favor", "gracias",
+                "hospital", "emergencia", "doctor", "farmacia",
+                "prescripción", "diagnóstico", "alergia",
+                "pasaporte", "aeropuerto", "reservación",
+            ] if self.use_prompt else None
 
-            # Following Support's advice: robust model with language detection enabled
-            self.client.connect(
-                StreamingParameters(
-                    speech_model="universal-streaming-multilingual",
-                    sample_rate=16000,
-                    language_detection=True, # Critical for Code-Switching demo
-                    disable_formatting=True, # Trade formatting for latency in live translations
-                    prompt=custom_stt_prompt # Custom vocabulary injection (conditionally applied)
-                )
+            # Build connection parameters
+            connect_params = StreamingParameters(
+                speech_model="universal-streaming-multilingual",
+                sample_rate=16000,
+                language_detection=True,  # Critical for Code-Switching demo
+                format_turns=True,        # Enables turn-level keyterms boosting pass
             )
+            
+            # Conditionally inject keyterms (cannot coexist with `prompt`)
+            if itranslate_keyterms:
+                connect_params.keyterms_prompt = itranslate_keyterms
+
+            self.client.connect(connect_params)
 
             # Feed the websocket incrementally via a generator
             def audio_source():
