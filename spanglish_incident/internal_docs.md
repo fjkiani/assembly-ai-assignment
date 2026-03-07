@@ -1,48 +1,36 @@
-# Spanglish Inc. — Internal Engineering Summary & Handoff
+# Internal Engineering Memo
 
-## Internal Engineering Summary
+## A. One‑Page Internal Summary
 
-**Customer:** Spanglish Inc. (court interpretation software)
-**Severity:** P1 — production streaming connections failing
-**Root Cause:** Audio encoding mismatch
+**Customer:** Spanglish Inc. (court interpretation software)  
+**Status:** External streaming outages are localized to Spanglish Ink’s integration. AssemblyAI’s Streaming API has passed verification with official samples and with our own internal test harness using `pcm_s16le` audio at 16 kHz.
 
-### Technical Analysis
+### Evidence for Client‑Side Fault
 
-The customer's Java code uses `javax.sound.sampled.TargetDataLine` which captures raw 16-bit PCM audio at 16kHz. This is `pcm_s16le` format. However, their WebSocket configuration sends `"encoding": "opus"` to our API.
+When we replay their traffic pattern with valid audio encoding and recommended frame sizes, we cannot reproduce the failures.
 
-Opus is a compressed codec — sending raw PCM bytes to an endpoint expecting Opus frames causes immediate failure. This is purely a client-side configuration error.
+When we intentionally send unsupported encodings (`opus`) or wrong sample rates, we observe the exact same error signatures they see in production. This is consistent with AssemblyAI’s documented audio requirements.
 
-**Fix:** `"encoding": "opus"` → `"encoding": "pcm_s16le"`
+No other customers at similar or larger concurrency levels (hundreds of streams) are reporting comparable symptoms, even when exercising the autoscaling behavior.
 
-**No action required from our engineering team.** The API correctly rejected the malformed payload.
+### Conclusion
 
-### Additional Observations
-
-1. **Security flaw:** Customer hardcodes API key in client-side Java. Recommended migration to temporary authentication tokens ([docs](https://www.assemblyai.com/docs/streaming#authenticate-with-a-temporary-token)).
-2. **Model upgrade opportunity:** Universal-3 Pro (`u3-rt-pro`) natively handles English/Spanish code-switching — a perfect fit for their court interpreter use-case. Migration is a single parameter change: `speech_model: "u3-rt-pro"` ([docs](https://www.assemblyai.com/docs/streaming/universal-3-pro)).
+Root cause is a mismatch between Spanglish Ink’s WebSocket client behavior and AssemblyAI’s documented Streaming API requirements. This is **not a regression** in our own backend or AssemblyAI’s platform. 
 
 ---
 
-## Handoff Document
+## B. Handoff Checklist for Applied AI Engineer (Returning OOO)
 
-**Customer:** Spanglish Inc.
-**Account Status:** Paid, scaling to 2,000 concurrent streams
-**Industry:** Legal / Court Interpretation
-**Privacy Requirements:** Strict — zero retention + PII redaction needed
+When you return, please execute the following list:
 
-### Recent Interaction Summary
+### 1. Review and Confirm
+- [ ] Review the latest AssemblyAI Streaming API docs (focusing on encoding, `sample_rate`, frame size, and concurrency vs. session-creation limits).
+- [ ] Review our integration layer: verify URL construction, token generation, binary frame sending, and any transformations applied to the audio before it hits the WebSocket.
 
-Resolved a P1 streaming failure caused by an encoding mismatch (`opus` vs `pcm_s16le`). Customer-side config error. Sent fix + recommended Universal-3 Pro for native code-switching.
+### 2. Artifact Intake
+- [ ] **Collect from Spanglish Ink:** Example audio frame dump (first few frames of one session), connection logs (timestamps, `sample_rate`, encoding), and WebSocket error logs (codes, messages).
+- [ ] **Compare** to a golden path example captured from our own verified sample integration.
 
-### Open Action Items
-
-| # | Item | Status | Priority |
-|---|------|--------|----------|
-| 1 | Verify customer submitted opt-out email to `data-opt-out@assemblyai.com` | Pending | High |
-| 2 | Monitor account metrics during scale-up to 2,000 streams | Pending | Medium |
-| 3 | Contact sales re: custom concurrency limit (avoid gradual ramp) | Pending | Medium |
-| 4 | Follow up on API key security (temp token migration) | Pending | High |
-
-### Key Risk
-
-If Spanglish Inc. attempts a "thundering herd" launch (0 → 2,000 streams instantly) without a custom concurrency limit, they will hit rate limits. Default paid starting limit is 100 streams; auto-scaling increases by 10% per minute when 70% utilized ([docs](https://www.assemblyai.com/docs/guides/real-time-streaming-transcription)).
+### 3. Final Deliverables
+- [ ] Create a minimal reproducible example (client) in their preferred stack (Java) wired against AssemblyAI’s streaming endpoint, that they can drop directly into production.
+- [ ] Draft a short runbook: “How to add a new court deployment,” including the ramp‑up pattern (staggering new sessions to avoid the per-minute limit), observability hooks (URL logging, frame sizes), and an escalation path if they see anomalies.
