@@ -23,6 +23,26 @@ from assemblyai.streaming.v3 import (
     TurnEvent,
 )
 
+# ================================================================
+# SINGLE SOURCE OF TRUTH: Domain-specific keyterms for STT boosting.
+# Imported by app.py for dynamic UI rendering — never hardcode these elsewhere.
+# Per AssemblyAI's Keyterms Prompting docs:
+#   - Max 100 keyterms per session, each ≤ 50 chars
+#   - Word-level boosting during inference + turn-level post-processing
+# ================================================================
+DOMAIN_KEYTERMS = [
+    # Brand names
+    "iTranslate", "Spanglish", "AssemblyAI",
+    # Medical (English)
+    "prescription", "diagnosis", "allergic", "ibuprofen",
+    "acetaminophen", "amoxicillin", "hypertension",
+    "cholesterol", "emergency room", "blood pressure",
+    # Medical (Spanish)
+    "prescripción", "diagnóstico", "emergencia",
+    "farmacia", "alergia", "dolor de cabeza",
+    "hospital", "médico",
+]
+
 class AssemblyAIStreamer:
     """
     Handles the AssemblyAI Universal-3 Pro real-time websocket connection,
@@ -149,24 +169,7 @@ class AssemblyAIStreamer:
             #   it ensures brand names, medical terms, and multilingual phrases are
             #   recognized accurately — directly improving downstream translation quality.
             # ================================================================
-            
-            # Domain-specific terms covering BOTH take-home scenarios:
-            #   Part 1 (iTranslate): translation hardware for travelers/patients
-            #   Part 2 (Spanglish Inc.): bilingual conversations in professional settings
-            # Medical domain chosen for stronger demo impact — model shows clearer
-            # improvement on specialized medical vocabulary vs. common legal terms.
-            itranslate_keyterms = [
-                # Brand names
-                "iTranslate", "Spanglish", "AssemblyAI",
-                # Medical (English)
-                "prescription", "diagnosis", "allergic", "ibuprofen",
-                "acetaminophen", "amoxicillin", "hypertension",
-                "cholesterol", "emergency room", "blood pressure",
-                # Medical (Spanish)
-                "prescripción", "diagnóstico", "emergencia",
-                "farmacia", "alergia", "dolor de cabeza",
-                "hospital", "médico",
-            ] if self.use_prompt else None
+            itranslate_keyterms = DOMAIN_KEYTERMS if self.use_prompt else None
 
             # Build connection parameters
             connect_params = StreamingParameters(

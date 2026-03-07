@@ -208,18 +208,20 @@ with col_main:
 
     api_key = os.environ.get("ASSEMBLYAI_API_KEY", "")
 
-    st.markdown("""#### 🎛️ STT Tuning: Universal-3 Pro Keyterms Prompting
+    from assemblyai_service import DOMAIN_KEYTERMS
+    _kt_preview = ", ".join(DOMAIN_KEYTERMS[:6]) + "..."
+    st.markdown(f"""#### 🎛️ STT Tuning: Universal-3 Pro Keyterms Prompting
 <small style="color: #8892b0;">Universal-3 Pro supports <b>Keyterms Prompting</b> — a word-level and turn-level boosting engine 
 that biases the speech model to accurately recognize domain-specific vocabulary during live inference. 
-This demo targets bilingual medical conversations: iTranslate's core use case for travelers and patients.</small>
+Currently loaded: <b>{len(DOMAIN_KEYTERMS)} keyterms</b>.</small>
 """, unsafe_allow_html=True)
     use_stt_prompt = st.toggle(
-        "Boost Domain Terms (medical, pharmaceutical, brand names)", 
+        f"Boost Domain Terms ({len(DOMAIN_KEYTERMS)} keyterms)", 
         value=True, 
-        help="When ON: injects 20 domain-specific keyterms covering medical terminology (prescription, diagnosis, ibuprofen, acetaminophen, amoxicillin, hypertension) and their Spanish equivalents (prescripción, diagnóstico, emergencia, farmacia) via keyterms_prompt. When OFF: baseline Universal-3 Pro with no term boosting."
+        help=f"When ON: injects {len(DOMAIN_KEYTERMS)} domain-specific keyterms ({_kt_preview}) via keyterms_prompt. The model boosts these at word-level during inference and turn-level post-processing. When OFF: baseline Universal-3 Pro with no term boosting."
     )
     if use_stt_prompt:
-        st.caption("✅ Keyterms active: prescription, diagnosis, ibuprofen, acetaminophen, prescripción, diagnóstico, emergencia...")
+        st.caption(f"✅ Keyterms active: {_kt_preview}")
     else:
         st.caption("⚪ Baseline mode — no domain term boosting")
 
@@ -434,15 +436,8 @@ This demo targets bilingual medical conversations: iTranslate's core use case fo
             s_langs = sorted(set(str(t[2]).upper() for t in session_stt if t[2] and str(t[2]).upper() != "UNKNOWN"))
             
             # Keyterms hit analysis — scan all STT transcripts for each injected term
-            all_keyterms = [
-                "iTranslate", "Spanglish", "AssemblyAI",
-                "prescription", "diagnosis", "allergic", "ibuprofen",
-                "acetaminophen", "amoxicillin", "hypertension",
-                "cholesterol", "emergency room", "blood pressure",
-                "prescripción", "diagnóstico", "emergencia",
-                "farmacia", "alergia", "dolor de cabeza",
-                "hospital", "médico",
-            ]
+            from assemblyai_service import DOMAIN_KEYTERMS as _kt
+            all_keyterms = _kt
             all_stt_text = " ".join(t[0] for t in session_stt).lower()
             hits = [kt for kt in all_keyterms if kt.lower() in all_stt_text]
             misses = [kt for kt in all_keyterms if kt.lower() not in all_stt_text]
