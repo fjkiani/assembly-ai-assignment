@@ -211,15 +211,15 @@ with col_main:
     st.markdown("""#### 🎛️ STT Tuning: Universal-3 Pro Keyterms Prompting
 <small style="color: #8892b0;">Universal-3 Pro supports <b>Keyterms Prompting</b> — a word-level and turn-level boosting engine 
 that biases the speech model to accurately recognize domain-specific vocabulary during live inference. 
-This demo targets <b>both</b> take-home scenarios: iTranslate's translation device and Spanglish Inc.'s bilingual court reporting.</small>
+This demo targets bilingual medical conversations: iTranslate's core use case for travelers and patients.</small>
 """, unsafe_allow_html=True)
     use_stt_prompt = st.toggle(
-        "Boost Domain Terms (legal, interpreter, brand names)", 
+        "Boost Domain Terms (medical, pharmaceutical, brand names)", 
         value=True, 
-        help="When ON: injects 19 domain-specific keyterms covering court proceedings (defendant, testimony, objection, demandado, testigo, abogado) and brand names (iTranslate, Spanglish, AssemblyAI) into the STT model via keyterms_prompt. When OFF: baseline Universal-3 Pro with no term boosting."
+        help="When ON: injects 20 domain-specific keyterms covering medical terminology (prescription, diagnosis, ibuprofen, acetaminophen, amoxicillin, hypertension) and their Spanish equivalents (prescripción, diagnóstico, emergencia, farmacia) via keyterms_prompt. When OFF: baseline Universal-3 Pro with no term boosting."
     )
     if use_stt_prompt:
-        st.caption("✅ Keyterms active: defendant, testimony, objection, demandado, testigo, abogado, iTranslate, Spanglish...")
+        st.caption("✅ Keyterms active: prescription, diagnosis, ibuprofen, acetaminophen, prescripción, diagnóstico, emergencia...")
     else:
         st.caption("⚪ Baseline mode — no domain term boosting")
 
@@ -436,11 +436,12 @@ This demo targets <b>both</b> take-home scenarios: iTranslate's translation devi
             # Keyterms hit analysis — scan all STT transcripts for each injected term
             all_keyterms = [
                 "iTranslate", "Spanglish", "AssemblyAI",
-                "defendant", "plaintiff", "objection", "testimony",
-                "verdict", "counsel", "interpreter", "sustained",
-                "demandado", "testigo", "abogado", "declaración",
-                "juez", "culpable", "inocente",
-                "for the record", "the witness stated",
+                "prescription", "diagnosis", "allergic", "ibuprofen",
+                "acetaminophen", "amoxicillin", "hypertension",
+                "cholesterol", "emergency room", "blood pressure",
+                "prescripción", "diagnóstico", "emergencia",
+                "farmacia", "alergia", "dolor de cabeza",
+                "hospital", "médico",
             ]
             all_stt_text = " ".join(t[0] for t in session_stt).lower()
             hits = [kt for kt in all_keyterms if kt.lower() in all_stt_text]

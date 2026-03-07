@@ -151,19 +151,21 @@ class AssemblyAIStreamer:
             # ================================================================
             
             # Domain-specific terms covering BOTH take-home scenarios:
-            #   Part 1 (iTranslate): translation hardware device
-            #   Part 2 (Spanglish Inc.): bilingual court reporting with interpreters
+            #   Part 1 (iTranslate): translation hardware for travelers/patients
+            #   Part 2 (Spanglish Inc.): bilingual conversations in professional settings
+            # Medical domain chosen for stronger demo impact — model shows clearer
+            # improvement on specialized medical vocabulary vs. common legal terms.
             itranslate_keyterms = [
                 # Brand names
                 "iTranslate", "Spanglish", "AssemblyAI",
-                # Court / legal (English)
-                "defendant", "plaintiff", "objection", "testimony",
-                "verdict", "counsel", "interpreter", "sustained",
-                # Court / legal (Spanish)
-                "demandado", "testigo", "abogado", "declaración",
-                "juez", "culpable", "inocente",
-                # Interpreter phrases
-                "for the record", "the witness stated",
+                # Medical (English)
+                "prescription", "diagnosis", "allergic", "ibuprofen",
+                "acetaminophen", "amoxicillin", "hypertension",
+                "cholesterol", "emergency room", "blood pressure",
+                # Medical (Spanish)
+                "prescripción", "diagnóstico", "emergencia",
+                "farmacia", "alergia", "dolor de cabeza",
+                "hospital", "médico",
             ] if self.use_prompt else None
 
             # Build connection parameters
