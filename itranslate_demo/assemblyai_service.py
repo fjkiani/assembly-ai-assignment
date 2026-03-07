@@ -85,13 +85,15 @@ class AssemblyAIStreamer:
                 )
             )
 
-            # Feed the websocket incrementally
-            while self.is_streaming:
-                try:
-                    data = self.audio_stream.read(3200, exception_on_overflow=False)
-                    self.client.send_audio(data)
-                except Exception as e:
-                    break
+            # Feed the websocket incrementally via a generator
+            def audio_source():
+                while self.is_streaming and self.audio_stream:
+                    try:
+                        yield self.audio_stream.read(3200, exception_on_overflow=False)
+                    except Exception:
+                        break
+
+            self.client.stream(audio_source())
 
         except Exception as e:
             self.error_queue.put(str(e))

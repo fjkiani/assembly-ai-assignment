@@ -233,6 +233,9 @@ with col_main:
 
         try:
             import queue
+            import importlib
+            import assemblyai_service
+            importlib.reload(assemblyai_service)
             from assemblyai_service import AssemblyAIStreamer
 
             transcript_queue = queue.Queue()
