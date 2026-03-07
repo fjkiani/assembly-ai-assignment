@@ -4,6 +4,11 @@ This repository contains the deliverables for the Applied AI Engineering take-ho
 
 ---
 
+## Loom Video
+<!-- TODO: Add Loom video link here -->
+
+---
+
 ## Part 1: iTranslate Demo
 *(Target: A Python/TypeScript shop building translation hardware with strict compute/bandwidth constraints).*
 

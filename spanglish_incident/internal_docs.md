@@ -5,6 +5,10 @@
 **Customer:** Spanglish Inc. (court interpretation software)  
 **Status:** External streaming outages are localized to Spanglish Ink’s integration. AssemblyAI’s Streaming API has passed verification with official samples and with our own internal test harness using `pcm_s16le` audio at 16 kHz.
 
+**Summary** Streaming failures for Spanglish were caused by a mismatch between their Java WebSocket client and AssemblyAI’s documented streaming contract, not by any regression in our backend or AssemblyAI’s platform. Their client captured audio as 16 kHz mono PCM16 (pcm_s16le) but opened the WebSocket with encoding=opus, an unsupported encoding for the v3 streaming API, which led the server to misinterpret the audio frames and break the stream. When we aligned the URL (encoding=pcm_s16le&sample_rate=16000) and frame sizing with the official Universal‑Streaming spec, the same traffic pattern produced stable, accurate real‑time transcripts, and we could no longer reproduce the failures. No other customers at similar or higher concurrency levels showed comparable symptoms during this period, further confirming the issue was isolated to Spanglish’s client‑side integration rather than platform capacity or reliability.
+
+
+
 ### Evidence for Client‑Side Fault
 
 When we replay their traffic pattern with valid audio encoding and recommended frame sizes, we cannot reproduce the failures.
