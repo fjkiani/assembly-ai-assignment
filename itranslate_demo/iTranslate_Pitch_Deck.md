@@ -59,10 +59,9 @@ client = StreamingClient(StreamingClientOptions(api_key="...", api_host="streami
 
 # Boost iTranslate domain terms via Keyterms Prompting
 client.connect(StreamingParameters(
-    speech_model="universal-streaming-multilingual",
+    speech_model="u3-rt-pro",
     language_detection=True,
-    format_turns=True,  # Enables turn-level boosting pass
-    keyterms_prompt=["iTranslate", "emergencia", "diagnóstico", "farmacia"],
+    keyterms_prompt=["iTranslate", "AssemblyAI", "EpiPen", "metformin", "insulin glargine"],
     sample_rate=16000,
 ))
 

@@ -97,10 +97,9 @@ def on_turn(self, event: TurnEvent):
 
 client.on(StreamingEvents.Turn, on_turn)
 client.connect(StreamingParameters(
-    speech_model="universal-streaming-multilingual", # Enables Code-Switching
-    language_detection=True,
-    format_turns=True,                               # Enables turn-level keyterms boosting
-    keyterms_prompt=["iTranslate", "emergencia", "diagnóstico", "farmacia"],
+    speech_model="u3-rt-pro",                        # Universal-3 Pro Streaming
+    language_detection=True,                           # Enables multilingual code-switching
+    keyterms_prompt=["iTranslate", "AssemblyAI", "EpiPen", "metformin", "insulin glargine"],
     sample_rate=16000,
 ))
 client.stream(aai.extras.MicrophoneStream(sample_rate=16000))

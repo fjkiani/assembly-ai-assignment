@@ -3,7 +3,7 @@
 # ==============================================================================
 # This file (`assemblyai_service.py`) represents the remote Cloud backend.
 # It handles the heavy architectural lifting entirely off-device:
-#   1. STT: Streams audio to AssemblyAI Universal-3 Pro (Code-Switching detection).
+#   1. STT: Streams audio to AssemblyAI Universal-3 Pro via `u3-rt-pro` model.
 #   2. LLM Gateway: Pipes finalized transcripts immediately into Cohere's Command AI.
 #   3. TTS: Synthesizes the translation into audio (Simulated).
 # ==============================================================================
@@ -99,10 +99,11 @@ class AssemblyAIStreamer:
                     import os
                     
                     # Determine source → target based on detected language
-                    is_spanish = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("es")
-                    is_italian = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("it")
-                    is_french  = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("fr")
-                    is_english = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("en")
+                    lang_lower = lang.lower() if isinstance(lang, str) else ""
+                    is_spanish = lang_lower.startswith("es")
+                    is_italian = lang_lower.startswith("it")
+                    is_french  = lang_lower.startswith("fr")
+                    is_english = lang_lower.startswith("en")
                     
                     if is_spanish or is_italian or is_french:
                         target_lang = "EN"
@@ -129,7 +130,7 @@ class AssemblyAIStreamer:
                     mock_translation = f"[{target_lang}] {translated_text}"
                 except Exception as e:
                     # Graceful fallback if Cohere fails or key is missing
-                    target_lang = "EN" if (isinstance(lang, str) and not getattr(lang, "lower", lambda: "")().startswith("en")) else "ES"
+                    target_lang = "EN" if (isinstance(lang, str) and not lang.lower().startswith("en")) else "ES"
                     mock_translation = f"[{target_lang}] (Translated from {lang[:2].upper() if lang else 'UNKNOWN'}) {event.transcript}"
                 
                 self.transcript_queue.put(("translated", mock_translation))
@@ -175,11 +176,13 @@ class AssemblyAIStreamer:
             itranslate_keyterms = DOMAIN_KEYTERMS if self.use_prompt else None
 
             # Build connection parameters
+            # `u3-rt-pro` is the Universal-3 Pro model name per official docs.
+            # For U3-Pro, formatting is built into the turn detection system —
+            # `end_of_turn` and `turn_is_formatted` always have the same value.
             connect_params = StreamingParameters(
-                speech_model="universal-streaming-multilingual",
+                speech_model="u3-rt-pro",
                 sample_rate=16000,
-                language_detection=True,  # Critical for Code-Switching demo
-                format_turns=True,        # Enables turn-level keyterms boosting pass
+                language_detection=True,  # Critical for multilingual code-switching
             )
             
             # Conditionally inject keyterms (cannot coexist with `prompt`)
