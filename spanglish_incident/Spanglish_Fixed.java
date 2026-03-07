@@ -30,7 +30,7 @@ public class Spanglish {
     // ============================================================================
     // BUG FIX #1: Changed "encoding=opus" to "encoding=pcm_s16le"
     //
-    // REASON: The AudioFormat below (line ~55) creates raw 16-bit signed
+    // REASON: The AudioFormat below (line ~98) creates raw 16-bit signed
     // little-endian PCM audio. That is "pcm_s16le". The original code said
     // "encoding=opus", but Opus is a compressed codec. Sending raw PCM bytes
     // to a server expecting compressed Opus frames causes immediate failure.
