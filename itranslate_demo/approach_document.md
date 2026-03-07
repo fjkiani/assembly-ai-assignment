@@ -83,7 +83,7 @@ client.connect(aai.streaming.v3.StreamingParameters(
 ```
 
 ### TypeScript (Control Plane & Companion Apps)
-The AssemblyAI TypeScript SDK can be used in a Node/Browser environment for companion apps or a web-based control plane. This layer subscribes to real-time transcript and translation updates, managing device sessions and visually displaying the conversational flow (partial captions, final text, translated output).
+The AssemblyAI TypeScript SDK can be used in a Node/Browser environment for companion apps or a web-based control plane. This layer subscribes to real-time transcript and translation updates, managing device sessions and visually displaying the conversational flow. *Crucially, Universal-3 Pro supports multilingual and native code-switching scenarios (including English/Spanish) automatically, which is a major selling point for iTranslate's core user base.*
 
 ---
 
@@ -92,7 +92,7 @@ The AssemblyAI TypeScript SDK can be used in a Node/Browser environment for comp
 For a handheld hardware translator, tuning the STT engine is critical to balancing speed and conversational accuracy.
 
 *   **Minimizing Latency:** Configure Universal-Streaming for absolute minimum latency by using `pcm_s16le`, disabling expensive formatting options (like punctuation/casing if unnecessary for the LLM), and aggressively tuning turn-detection thresholds.
-*   **Maximizing Accuracy:** Trade a small amount of latency for accuracy by using high-quality hardware audio capture and choosing **Universal-3 Pro** (`u3-rt-pro`). U3-Pro is highly optimized for short, conversational utterances and features native code-switching.
+*   **Maximizing Accuracy:** Trade a small amount of latency for accuracy by using high-quality hardware audio capture and choosing **Universal-3 Pro** (`u3-rt-pro`). U3-Pro is highly optimized for short, conversational utterances. Its native code-switching means you never need to manually swap language parameters if users jump between English and Spanish mid-sentence.
 *   **Translation Quality:** By using the LLM Gateway pattern, you translate finalized segments (utterances) rather than rolling partial text. This preserves alignment and grammatical context, ensuring higher-fidelity output than real-time word-by-word literal translation.
 
 ---
