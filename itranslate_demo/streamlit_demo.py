@@ -249,6 +249,16 @@ with col_main:
 
             def on_turn(self, event: TurnEvent):
                 transcript_queue.put(("turn", event.transcript, event.end_of_turn))
+                
+                # If this turn is finalized, trigger the simulated LLM Gateway pipeline
+                if event.end_of_turn and event.transcript.strip():
+                    transcript_queue.put(("translating", ""))
+                    time.sleep(0.4) # Simulate LLM Gateway API call
+                    mock_translation = f"[ES] {event.transcript}" # Mock translation for demo UI
+                    transcript_queue.put(("translated", mock_translation))
+                    
+                    time.sleep(0.3) # Simulate TTS Synthesis API call
+                    transcript_queue.put(("tts", "Audio ready"))
 
             def on_terminated(self, event: TerminationEvent):
                 transcript_queue.put(("terminated", f"{event.audio_duration_seconds:.1f}s processed"))
@@ -269,10 +279,12 @@ with col_main:
                     client.on(StreamingEvents.Termination, on_terminated)
                     client.on(StreamingEvents.Error, on_error)
 
+                    # Following best practices: optimize latency
                     client.connect(
                         StreamingParameters(
                             speech_model="u3-rt-pro",
                             sample_rate=16000,
+                            disable_formatting=True # Trade formatting for latency in live translations
                         )
                     )
 
@@ -287,27 +299,59 @@ with col_main:
 
             start_time = time.time()
             lines = []
+            
+            # CSS for the pipeline states
+            pipeline_states = {
+                "STT": "#64ffda",
+                "LLM": "#00d2ff",
+                "TTS": "#b678ff"
+            }
 
             while st.session_state.is_streaming:
                 try:
                     msg = transcript_queue.get(timeout=0.5)
+                    
                     if msg[0] == "turn":
                         text = msg[1]
                         is_final = msg[2]
+                        
                         if is_final and text.strip():
-                            lines.append(text)
+                            lines.append((text, "STT"))
                             st.session_state.turn_count += 1
-                        elif text.strip():
-                            # Show partial (will be overwritten)
-                            pass
-
-                        display_lines = lines[-20:]  # Keep last 20 lines
+                        
+                        display_lines = lines[-15:]  # Keep last 15 actions
                         html = ""
-                        for line in display_lines:
-                            html += f'<div class="transcript-line">{line}</div>'
+                        for line_text, state in display_lines:
+                            color = pipeline_states.get(state, "#ccd6f6")
+                            if state == "STT":
+                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text}</div>'
+                            elif state == "LLM":
+                                html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text}</div>'
+                            elif state == "TTS":
+                                html += f'<div class="transcript-line" style="border-left: 2px solid {color}; padding-left: 10px;"><span class="badge" style="color:{color}; border-color:{color};">TTS Audio</span> <em>Synthesized and streamed to device</em> 🔊</div>'
+                                
                         if not is_final and text.strip():
                             html += f'<div class="transcript-line" style="color: #5a6680; font-style: italic;">{text} ...</div>'
+                            
                         transcript_container.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
+
+                    elif msg[0] == "translating":
+                        # Add a loading state for translation
+                        html = ""
+                        for line_text, state in lines[-15:]:
+                            color = pipeline_states.get(state, "#ccd6f6")
+                            if state == "STT":
+                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text}</div>'
+                            else:
+                                html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">{state}</span> {line_text}</div>'
+                        html += f'<div class="transcript-line" style="color: #00d2ff; font-style: italic;"><span class="pulse-dot" style="background:#00d2ff;"></span> Translating via LLM Gateway...</div>'
+                        transcript_container.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
+
+                    elif msg[0] == "translated":
+                        lines.append((msg[1], "LLM"))
+                        
+                    elif msg[0] == "tts":
+                        lines.append((msg[1], "TTS"))
 
                     elif msg[0] == "status":
                         status_text.markdown(f"*{msg[1]}*")
@@ -336,9 +380,22 @@ with col_main:
     else:
         # Show previous transcripts or placeholder
         if st.session_state.transcripts:
+            pipeline_states = {
+                "STT": "#64ffda",
+                "LLM": "#00d2ff",
+                "TTS": "#b678ff"
+            }
             html = ""
-            for line in st.session_state.transcripts:
-                html += f'<div class="transcript-line">{line}</div>'
+            for line_text, state in st.session_state.transcripts:
+                color = pipeline_states.get(state, "#ccd6f6")
+                if state == "STT":
+                    html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text}</div>'
+                elif state == "LLM":
+                    html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text}</div>'
+                elif state == "TTS":
+                    html += f'<div class="transcript-line" style="border-left: 2px solid {color}; padding-left: 10px;"><span class="badge" style="color:{color}; border-color:{color};">TTS Audio</span> <em>Synthesized and streamed to device</em> 🔊</div>'
+                else:
+                    html += f'<div class="transcript-line">{line_text}</div>'
             st.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
         else:
             st.markdown("""

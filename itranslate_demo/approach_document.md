@@ -6,137 +6,107 @@ iTranslate's translation hardware device needs improved STT accuracy for real-ti
 
 ---
 
-## 1. Architecture
+## 1. Architecture: The Cloud-Centric Pipeline
+
+The iTranslate device has no GPU and limited edge compute. Therefore, the architecture must rely on a lightweight on-device client that only handles audio capture and transport, offloading all heavy inferences (STT, Translation, TTS) to the cloud.
+
+AssemblyAI’s **Universal-Streaming API** is designed exactly for this low‑latency, conversational use case.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  iTranslate Hardware Device                                     │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐  │
-│  │ Mic      │───▶│ PCM      │───▶│ WiFi/    │───▶│ Speaker  │  │
-│  │ (16kHz)  │    │ Encoder  │    │ Cellular │    │ (TTS out)│  │
-│  └──────────┘    └──────────┘    └──────────┘    └──────────┘  │
-└──────────────────────┬───────────────────▲──────────────────────┘
-                       │                   │
-              Raw PCM  │  WebSocket        │  Translated text
-              audio    │  (wss://)         │  + TTS audio
-                       ▼                   │
-┌──────────────────────────────────────────┴──────────────────────┐
-│  Cloud Backend                                                  │
+│  iTranslate Hardware Device (Edge)                              │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐                   │
+│  │ Mic      │───▶│ Encode   │───▶│ WebSocket│                   │
+│  │ (16kHz)  │    │ pcm_s16le│    │ Client   │                   │
+│  └──────────┘    └──────────┘    └──────────┘                   │
+│       ▲                                │                        │
+│       │                                ▼                        │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐                   │
+│  │ Speaker  │◀───│ Decode   │◀───│ Playback │                   │
+│  │ (TTS out)│    │          │    │ Stream   │                   │
+│  └──────────┘    └──────────┘    └──────────┘                   │
+└──────────────────────────────────────────────────────────────────┘
+                                 │ ▲
+                 Raw PCM (16kHz) │ │ TTS Audio Stream
+                                 ▼ │
+┌──────────────────────────────────────────────────────────────────┐
+│  Cloud Pipeline (Python / TypeScript Backend)                   │
 │                                                                 │
 │  ┌─────────────────┐   ┌─────────────────┐   ┌──────────────┐  │
-│  │ AssemblyAI      │──▶│ Translation API │──▶│ TTS Engine   │  │
-│  │ Universal-3 Pro │   │ (DeepL/Google)  │   │ (Cloud TTS)  │  │
-│  │ Streaming STT   │   │                 │   │              │  │
+│  │ AssemblyAI      │──▶│ LLM Gateway     │──▶│ TTS Engine   │  │
+│  │ Universal-STT   │   │ (Translation)   │   │ (Cloud TTS)  │  │
 │  └─────────────────┘   └─────────────────┘   └──────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow
-1. **Device microphone** captures audio at 16kHz, 16-bit, mono (PCM)
-2. Audio streams via **WebSocket** to AssemblyAI's cloud (`streaming.assemblyai.com`)
-3. **Universal-3 Pro** transcribes in real-time with ~300ms latency
-4. Transcribed text is sent to a **Translation API** (e.g., DeepL)
-5. Translated text is sent to a **TTS engine** (e.g., Google Cloud TTS)
-6. Synthesized audio streams back to the **device speaker**
-
-### Why Cloud-Based?
-The iTranslate device has no GPU and insufficient compute for on-device inference (per the requirements). Cloud-based STT via WebSocket is the only viable path. The device only needs to:
-- Capture raw PCM audio from the microphone
-- Maintain a WebSocket connection over WiFi/cellular
-- Play back TTS audio through the speaker
-
-**Bandwidth requirement:** ~32 KB/s (16,000 samples/sec × 2 bytes/sample = 32,000 bytes/sec). This is well within mobile data capabilities.
+### Data Flow & Lifecycle
+1. **Capture & Transport:** The device captures microphone audio, encodes it as mono `pcm_s16le` at a fixed 16 kHz rate, and streams it to the backend via WebSocket using small, regular chunks.
+2. **Session Management:** The system maintains a single continuous connection per "conversation session."
+3. **STT:** AssemblyAI's Streaming STT transcribes the audio, returning partial and final transcripts in real-time.
+4. **LLM Gateway Translation:** As soon as an utterance ends (a "final" transcript), the backend routes the text through the real-time translation cookbook pattern (Streaming STT + LLM Gateway) to translate the segment into the target language.
+5. **TTS Playback:** The translated text is piped into a cloud-based TTS provider, and the resulting audio is streamed back down to the device for playback.
 
 ---
 
-## 2. Why Universal-3 Pro (`u3-rt-pro`)
+## 2. Integration: Python & TypeScript SDKs
 
-| Capability | Benefit for iTranslate |
-|---|---|
-| **Native code-switching** | Handles bilingual conversations where speakers switch between EN/ES/FR/DE/IT/PT without any configuration. Critical for a translation device. |
-| **Sub-300ms latency** | Real-time feel — users hear the translation almost immediately after speaking. |
-| **94% word accuracy** | Best-in-class accuracy on real-world audio. English: 94.07%, Spanish: 93.6%. |
-| **Turn detection** | Knows when a speaker finishes — this is the natural trigger point to send text to the translation API. |
-| **Promptable** | Can prime the model with domain-specific vocabulary (medical terms, legal jargon) using natural language prompts. |
-| **No custom training** | Works out of the box. No need for iTranslate to provide training data. |
+Your backend services should not hand-roll WebSocket logic. Instead, utilize AssemblyAI's official SDKs.
 
-**Source:** [Universal-3 Pro Streaming docs](https://www.assemblyai.com/docs/streaming/universal-3-pro)
-
----
-
-## 3. Integration Code
-
-The complete integration uses AssemblyAI's Python SDK (v3 streaming API):
+### Python Backend (Orchestration)
+The official Python SDK provides streaming client utilities to manage events, turns, and termination automatically.
 
 ```python
-from assemblyai.streaming.v3 import (
-    StreamingClient, StreamingClientOptions,
-    StreamingEvents, StreamingParameters, TurnEvent,
-)
+import assemblyai as aai
+from assemblyai.streaming.v3 import StreamingClient, StreamingClientOptions, TurnEvent
 
-client = StreamingClient(
-    StreamingClientOptions(
-        api_key=api_key,
-        api_host="streaming.assemblyai.com",
-    )
-)
+# 1. Initialize AssemblyAI Client
+client = StreamingClient(StreamingClientOptions(api_key="...", api_host="streaming.assemblyai.com"))
 
+# 2. Orchestrate Translation & TTS on Turn Completion
 def on_turn(self, event: TurnEvent):
     if event.end_of_turn:
-        # Speaker finished — send to translation API
-        translated = translate(event.transcript, target_lang="es")
-        tts_audio = synthesize_speech(translated)
-        play_on_device(tts_audio)
+        # Route to LLM Gateway for translation
+        translated_text = llm_gateway_translate(event.transcript, target="es")
+        # Route to TTS
+        audio_stream = tts_synthesize(translated_text)
+        # Stream down to device
+        send_to_device(audio_stream)
 
-client.on(StreamingEvents.Turn, on_turn)
-client.connect(StreamingParameters(
-    speech_model="u3-rt-pro",
+client.on(aai.streaming.v3.StreamingEvents.Turn, on_turn)
+
+# 3. Best-Practice Latency Settings
+client.connect(aai.streaming.v3.StreamingParameters(
+    speech_model="u3-rt-pro", 
     sample_rate=16000,
+    disable_formatting=True # Trade formatting for lower latency
 ))
-client.stream(aai.extras.MicrophoneStream(sample_rate=16000))
 ```
 
-**Key integration point:** The `on_turn` callback with `event.end_of_turn == True` is the natural place to trigger translation. Universal-3 Pro's turn detection handles the timing so you don't need silence-detection heuristics.
-
-**Source:** [Streaming tutorial](https://www.assemblyai.com/docs/getting-started/transcribe-streaming-audio-from-a-microphone/python)
-
----
-
-## 4. Deployment Considerations
-
-### Authentication
-- Use **temporary authentication tokens** generated by a backend server, not hardcoded API keys on the device.
-- Source: [Temporary auth tokens](https://www.assemblyai.com/docs/streaming#authenticate-with-a-temporary-token)
-
-### Latency Budget
-| Stage | Expected Latency |
-|---|---|
-| Audio capture + network | ~50ms |
-| AssemblyAI STT | ~300ms |
-| Translation API | ~100-200ms |
-| TTS synthesis | ~200-500ms |
-| **Total** | **~650-1050ms** |
-
-For a translation device, sub-1-second end-to-end latency is acceptable and matches competitor devices like Pocketalk.
-
-### Regional Endpoints
-AssemblyAI offers EU-West streaming via `streaming.eu.assemblyai.com` for European deployments. This can reduce latency for EU-based users and help with GDPR compliance.
-
-### Error Handling
-- WebSocket disconnections: implement automatic reconnection with exponential backoff
-- Network transitions (WiFi → cellular): buffer audio locally during the switch, then resume streaming
-- Session timeout: AssemblyAI sessions have an expiry (`expires_at` in the Begin event) — reconnect before it expires
+### TypeScript (Control Plane & Companion Apps)
+The AssemblyAI TypeScript SDK can be used in a Node/Browser environment for companion apps or a web-based control plane. This layer subscribes to real-time transcript and translation updates, managing device sessions and visually displaying the conversational flow (partial captions, final text, translated output).
 
 ---
 
-## 5. Demo
+## 3. Latency vs. Accuracy Levers
 
-Two demo implementations are provided:
+For a handheld hardware translator, tuning the STT engine is critical to balancing speed and conversational accuracy.
 
-1. **`itranslate_demo.py`** — Terminal-based Python script. Minimal dependencies, shows the core integration pattern.
-2. **`streamlit_demo.py`** — Visual web UI with live transcription, session stats, and architecture diagram. Best for presenting to the iTranslate team.
+*   **Minimizing Latency:** Configure Universal-Streaming for absolute minimum latency by using `pcm_s16le`, disabling expensive formatting options (like punctuation/casing if unnecessary for the LLM), and aggressively tuning turn-detection thresholds.
+*   **Maximizing Accuracy:** Trade a small amount of latency for accuracy by using high-quality hardware audio capture and choosing **Universal-3 Pro** (`u3-rt-pro`). U3-Pro is highly optimized for short, conversational utterances and features native code-switching.
+*   **Translation Quality:** By using the LLM Gateway pattern, you translate finalized segments (utterances) rather than rolling partial text. This preserves alignment and grammatical context, ensuring higher-fidelity output than real-time word-by-word literal translation.
 
-Run the Streamlit demo:
+---
+
+## 4. Demo: The Live Bilingual Flow
+
+Included in this repository is `streamlit_demo.py`. This UI physically demonstrates the target architectural flow for the AE/Demo narrative:
+
+1. **Hardware Simulation:** The browser captures your microphone.
+2. **STT Streaming:** Text appears instantly on screen (Partial → Final).
+3. **Translation Layer:** Once a turn finalizes, the text hits a mock LLM Gateway for translation.
+4. **TTS Output:** The translated text is mapped to a simulated TTS engine for playback.
+
+Run the demo to experience the pipeline:
 ```bash
-ASSEMBLYAI_API_KEY=<your_key> streamlit run streamlit_demo.py
+ASSEMBLYAI_API_KEY=<your_key> python3 -m streamlit run streamlit_demo.py
 ```
