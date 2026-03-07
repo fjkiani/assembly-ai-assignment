@@ -420,16 +420,48 @@ This demo targets <b>both</b> take-home scenarios: iTranslate's translation devi
                     html += f'<div class="transcript-line">{line_text}</div>'
             st.markdown(f'<div class="transcript-box">{html}</div>', unsafe_allow_html=True)
 
-            # --- Inject Post-Session Closer ---
-            st.success("🏁 **Conversation Session Finalized**")
-            st.markdown("""
-            ### The Universal-3 Pro Advantage
-            You just witnessed AssemblyAI's cutting-edge cloud architecture powering the iTranslate hardware pipeline:
+            # --- Dynamic Post-Session Analytics ---
+            st.success("🏁 **Session Complete — Live Analytics Below**")
             
-            *   ⚡️ **Sub-300ms Latency:** Voice data was piped directly from the device to the STT model and straight into the LLM Gateway without perceptible delay.
-            *   🗣️ **Native Code-Switching:** English and Spanish were transcribed seamlessly in real-time without requiring the user to manually switch language profiles.
-            *   🔋 **Zero Device Compute:** The STT model, LLM translation, and TTS synthesis were entirely offloaded to the cloud, preserving the hardware's battery and thermals.
-            """)
+            # Compute metrics from real session data
+            session_stt = [t for t in st.session_state.transcripts if len(t) == 4 and t[1] == "STT"]
+            session_llm = [t for t in st.session_state.transcripts if len(t) == 4 and t[1] == "LLM" and t[3] > 0]
+            
+            # Avg latency
+            s_avg_lat = (sum(t[3] for t in session_llm) / len(session_llm)) * 1000 if session_llm else 0
+            
+            # Languages detected
+            s_langs = sorted(set(str(t[2]).upper() for t in session_stt if t[2] and str(t[2]).upper() != "UNKNOWN"))
+            
+            # Keyterms hit analysis — scan all STT transcripts for each injected term
+            all_keyterms = [
+                "iTranslate", "Spanglish", "AssemblyAI",
+                "defendant", "plaintiff", "objection", "testimony",
+                "verdict", "counsel", "interpreter", "sustained",
+                "demandado", "testigo", "abogado", "declaración",
+                "juez", "culpable", "inocente",
+                "for the record", "the witness stated",
+            ]
+            all_stt_text = " ".join(t[0] for t in session_stt).lower()
+            hits = [kt for kt in all_keyterms if kt.lower() in all_stt_text]
+            misses = [kt for kt in all_keyterms if kt.lower() not in all_stt_text]
+            hit_rate = (len(hits) / len(all_keyterms) * 100) if all_keyterms else 0
+            
+            # Display
+            st.markdown("#### 📊 Session Analytics")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Avg STT Latency", f"{s_avg_lat:.0f}ms")
+            m2.metric("Languages", ", ".join(s_langs) if s_langs else "—")
+            m3.metric("Finalized Turns", str(len(session_stt)))
+            m4.metric("Keyterms Hit Rate", f"{hit_rate:.0f}% ({len(hits)}/{len(all_keyterms)})")
+            
+            # Keyterms breakdown
+            if hits:
+                hit_badges = " ".join(f'<span class="badge" style="color: #64ffda; border-color: #64ffda;">✓ {t}</span>' for t in hits)
+                st.markdown(f'<div style="margin-top:8px;"><strong style="color:#64ffda;">Matched:</strong> {hit_badges}</div>', unsafe_allow_html=True)
+            if misses:
+                miss_badges = " ".join(f'<span class="badge" style="color: #ff6b6b; border-color: #ff6b6b;">✗ {t}</span>' for t in misses)
+                st.markdown(f'<div style="margin-top:8px;"><strong style="color:#ff6b6b;">Missed:</strong> {miss_badges}</div>', unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="transcript-box" style="display: flex; align-items: center; justify-content: center; color: #5a6680;">
