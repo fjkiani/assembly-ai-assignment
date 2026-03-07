@@ -1,6 +1,6 @@
 # iTranslate Presentation Deck: Real-Time Translation with AssemblyAI
 
-> **Presenter:** AssemblyAI Account Executive (AE)
+> **Presenter:** AssemblyAI Account Executive and Applied Engineering Team
 > **Audience:** iTranslate Technical Decision-Makers and Product Stakeholders
 > **Goal:** Demonstrate how AssemblyAI's Universal-3 Pro Streaming API solves iTranslate's STT accuracy challenges and enables their real-time translation device architecture without requiring on-device compute.
 
