@@ -19,11 +19,11 @@ This repository contains a fully containerized **Streamlit interactive dashboard
 
 When you click "Start Listening", the application:
 1. Spawns a background daemon thread that securely hooks into your local microphone (using `pyaudio`).
-2. Opens a persistent WebSocket connection to `wss://streaming.assemblyai.com`, optionally injecting a **custom STT prompt** (e.g., medical jargon, brand names) to bias Universal-3 Pro's vocabulary via the `prompt=` parameter.
+2. Opens a persistent WebSocket connection to `wss://streaming.assemblyai.com`, optionally injecting **domain-specific keyterms** (e.g., medical jargon, brand names) via `keyterms_prompt` to boost recognition accuracy at both word-level and turn-level.
 3. Streams your live voice in rapid chunks, catching partial transcripts.
 4. When a turn is finalized, it dynamically calculates the latency and extracts the natively detected language (`[ES]`, `[EN]`), simulating a pass-through to an LLM Gateway.
 
-An **"Engine Tuning" toggle** in the UI lets the AE switch STT Prompting on/off to demonstrate the impact of domain-specific vocabulary injection.
+An **"STT Tuning" toggle** in the UI lets the AE switch Keyterms Prompting on/off to demonstrate the impact of domain-specific vocabulary boosting.
 
 ## 🔌 Running Locally (Microphone Enabled)
 
@@ -63,7 +63,7 @@ This file represents the physical iTranslate handheld unit. It is intentionally 
 
 ### 2. The Cloud Orchestration Engine (`app/assemblyai_service.py`)
 This file represents the powerful remote cloud backend. It executes the exact three-step "LLM Gateway" pipeline proposed in the architecture document:
-* **Step 1 (STT):** Maintains the WebSocket connection with AssemblyAI Universal-3 Pro, parsing the `.language_code` to detect Code-Switching natively. When STT Prompting is enabled, a custom `prompt=` parameter injects domain-specific vocabulary (medical terms, brand names like "iTranslate") directly into the speech model to improve transcription accuracy.
+* **Step 1 (STT):** Maintains the WebSocket connection with AssemblyAI Universal-3 Pro, parsing the `.language_code` to detect Code-Switching natively. When Keyterms Prompting is enabled, a `keyterms_prompt` parameter injects domain-specific terms (medical vocabulary, brand names like "iTranslate") that the model boosts at word-level during inference and turn-level during post-processing.
 * **Step 2 (LLM Gateway):** Catches finalized transcripts (`end_of_turn=True`) and immediately pipes the text into the **Cohere System API (`command-a-03-2025`)** for extreme low-latency translation based on the detected language.
 * **Step 3 (TTS Synthesizer):** Packages the translated string into a simulated TTS audio ready payload and fires it down the queue back to the UI (`app.py`).
 

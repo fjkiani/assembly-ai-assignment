@@ -57,7 +57,7 @@ The iTranslate device has no GPU and insufficient compute for on-device inferenc
 | **Sub-300ms latency** | Real-time feel — users hear the translation almost immediately after speaking. |
 | **94% word accuracy** | Best-in-class accuracy on real-world audio. English: 94.07%, Spanish: 93.6%. |
 | **Turn detection** | Knows when a speaker finishes — this is the natural trigger point to send text to the translation API. |
-| **Promptable** | Can prime the model with domain-specific vocabulary (medical terms, legal jargon) using natural language prompts. |
+| **Keyterms Prompting** | Boost recognition of domain-specific terms (medical jargon, brand names) via `keyterms_prompt`. Two-stage: word-level during inference + turn-level post-processing. |
 | **No custom training** | Works out of the box. No need for iTranslate to provide training data. |
 
 **Source:** [Universal-3 Pro Streaming docs](https://www.assemblyai.com/docs/streaming/universal-3-pro)
@@ -99,6 +99,8 @@ client.on(StreamingEvents.Turn, on_turn)
 client.connect(StreamingParameters(
     speech_model="universal-streaming-multilingual", # Enables Code-Switching
     language_detection=True,
+    format_turns=True,                               # Enables turn-level keyterms boosting
+    keyterms_prompt=["iTranslate", "emergencia", "diagnóstico", "farmacia"],
     sample_rate=16000,
 ))
 client.stream(aai.extras.MicrophoneStream(sample_rate=16000))
@@ -142,13 +144,13 @@ AssemblyAI offers EU-West streaming via `streaming.eu.assemblyai.com` for Europe
 A complete, production-ready demonstration has been built simulating the physical device UX via a persistent Streamlit web dashboard.
 
 The architecture is divided into two strict components to prove the cloud-offloading capability:
-1. **`itranslate_demo/app/app.py`** — The simulated "Hardware Device". It contains no ML models—it just captures the mic and renders the UI.
-2. **`itranslate_demo/app/assemblyai_service.py`** — The Cloud Orchestration Backend. It streams the mic to Universal-3 Pro, parses the language code, and fires the string to Cohere's API.
+1. **`itranslate_demo/app/app.py`** — The simulated "Hardware Device". It contains no ML models—it just captures the mic and renders the UI. Exposes a **Keyterms Prompting toggle** to switch domain term boosting on/off during the demo.
+2. **`itranslate_demo/app/assemblyai_service.py`** — The Cloud Orchestration Backend. It streams the mic to Universal-3 Pro (with optional `keyterms_prompt` for domain vocabulary boosting), parses the language code, and fires the string to Cohere's API.
 
 Run the Streamlit demo locally (requires microphone access):
 ```bash
 cd itranslate_demo/app
 export ASSEMBLYAI_API_KEY="your_key"
 export COHERE_API_KEY="your_key"
-python3 -m streamlit run app.py
+streamlit run app.py
 ```

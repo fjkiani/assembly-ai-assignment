@@ -43,7 +43,7 @@
 *"Universal-3 Pro is purpose-built for exactly this use case: low-latency conversational STT on resource-constrained clients."*
 
 * **Native Multilingual & Code-Switching:** Handles English/Spanish mixing naturally within a single utterance. No manual language swapping.
-* **Text Prompting Engine:** You can prime the streaming model with domain-specific text prompts (e.g., "Expect medical terminology and the brand name iTranslate") to aggressively correct disfluencies and enforce specific jargon.
+* **Keyterms Prompting:** Boost recognition of domain-specific vocabulary (brand names, medical terms, multilingual phrases) via `keyterms_prompt`. The model biases at two stages: word-level during live inference, and turn-level post-processing — ensuring the translation engine receives accurate source text.
 * **Best-in-Class Accuracy:** Directly improves end-user translation quality by ensuring the translation engine receives flawless source text.
 * **Zero Device Compute:** Massive cost savings on BOM (Bill of Materials); access the latest models without firmware updates.
 * **Optimized for Voice Agents:** Built for the "300ms latency rule" applied to short conversational utterances.
@@ -57,12 +57,12 @@
 ```python
 client = StreamingClient(StreamingClientOptions(api_key="...", api_host="streaming.assemblyai.com"))
 
-# Prime Universal-3 Pro with domain vocabulary via Text Prompting
-stt_prompt = "Bilingual conversation with medical terms and the word 'iTranslate'"
+# Boost iTranslate domain terms via Keyterms Prompting
 client.connect(StreamingParameters(
     speech_model="universal-streaming-multilingual",
     language_detection=True,
-    prompt=stt_prompt,  # Custom vocabulary injection
+    format_turns=True,  # Enables turn-level boosting pass
+    keyterms_prompt=["iTranslate", "emergencia", "diagnóstico", "farmacia"],
     sample_rate=16000,
 ))
 
@@ -93,10 +93,10 @@ def on_turn(self, event: TurnEvent):
 *(The AE boots up `itranslate_demo/app/app.py`)*
 
 * **1. Hardware Simulation:** Capturing local mic audio live.
-* **2. STT Prompt Toggle:** Show the "Engine Tuning" toggle—run the demo first with **Prompting OFF** (baseline), then toggle **ON** to inject iTranslate medical jargon into the STT layer. This visually proves the tuning capability.
+* **2. Keyterms Toggle:** Show the "STT Tuning" toggle — run the demo first with **Keyterms OFF** (baseline), then toggle **ON** to inject 15 iTranslate domain terms (medical, travel, brand names) into the STT layer. This visually proves the term-boosting capability.
 * **3. STT Streaming Visualization:** Watch partials roll in instantly, finalizing with high accuracy.
 * **4. The Tri-State LLM Pipeline:** See the handoff from finalized STT `[STT]` ➔ the LLM Gateway translate trigger `[LLM]` ➔ and the Audio synthesis cue `[TTS]`.
-* **Takeaway:** This pipeline is achieved over a single persistent `StreamingClient` session, with domain tuning controlled by a single `prompt=` parameter.
+* **Takeaway:** This pipeline is achieved over a single persistent `StreamingClient` session, with domain term accuracy controlled by a single `keyterms_prompt` parameter.
 
 ---
 
