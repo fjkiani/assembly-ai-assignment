@@ -5,7 +5,8 @@ A visual, interactive demo of AssemblyAI's Universal-3 Pro real-time
 streaming transcription, built for the iTranslate hardware use-case.
 
 Run:
-    ASSEMBLYAI_API_KEY=<your_key> streamlit run streamlit_demo.py
+    1. Add your API key to the ../.env file: ASSEMBLYAI_API_KEY=your_key
+    2. python3 -m streamlit run streamlit_demo.py
 """
 
 import os
@@ -13,6 +14,10 @@ import time
 import threading
 import queue
 import streamlit as st
+from dotenv import load_dotenv
+
+# Load API key from ../.env (repo root)
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # ---------------------------------------------------------------------------
 # Page Config
