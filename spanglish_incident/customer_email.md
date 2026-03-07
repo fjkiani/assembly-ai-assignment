@@ -15,7 +15,7 @@ In your Java code, the `AudioFormat` correctly captures raw 16-bit PCM audio. Ho
 
 **The Fix:** 
 1. **Enforce required audio format:** Update the encoding parameter in your URL from `"opus"` to `"pcm_s16le"`.
-2. **Send binary frames:** Ensure your WebSocket client sends binary frames (not JSON base64 chunks) with 100–450 ms of audio per frame.
+2. **Send binary frames:** Ensure your WebSocket client sends binary frames (not JSON base64 chunks). Each frame should contain a small chunk of audio (e.g., 25 ms at 400 samples per frame).
 3. **Harden the WebSocket client:** Implement explicit open/close per call and deterministic teardown when a call ends to prevent timeouts under load. Add robust error handling and exponential back‑off on “too many new sessions” style responses.
 4. **Add observability:** Log the connection URL (without the token), timestamps, sample_rate, frame sizes, and any error codes from AssemblyAI.
 
@@ -28,7 +28,7 @@ Your new‑session rate limit grows by 10% every 60 seconds when you use 70%+ of
 To safely ramp to 2,000+ concurrent bilingual streams:
 *   **Controlled Load Test:** Start with 100 concurrent bilingual sessions. Stagger starting new court sessions to ramp by 10–15% per minute. Monitor error rates and latency, and extend to 2,000+ once stability is validated.
 *   **Implement a session‑creation queue** to keep new sessions per minute under the current limit, allowing AssemblyAI’s automatic scaling to increase capacity over time.
-*   **Use webhooks** for session end events and internal metrics to recycle resources promptly for long‑running courts and overlapping cases.
+*   **Handle the Termination event** returned by the WebSocket when a session ends, and use internal metrics to recycle resources promptly for long‑running courts and overlapping cases.
 
 *Note: We highly recommend migrating to our newest model, **Universal-3 Pro** (`speech_model: "u3-rt-pro"`), which natively supports English/Spanish code-switching.*
 
@@ -39,7 +39,7 @@ We understand that court interpretation operates in highly sensitive environment
 **Security Posture:** AssemblyAI maintains SOC 2 Type 2 certification. Data is encrypted in transit and at rest, with strict access controls and continuous independent auditing.
 
 **"No Retention / No Training" Configuration:** 
-For Spanglish Ink, all streaming audio and transcripts will be processed **only** for real‑time transcription and will **not be stored or reused for model training** under your contracted configuration. Any optional logging or long‑term transcript storage on our side will be disabled for your production environment. Observability is handled solely via aggregated metrics, not content storage.
+For Streaming, AssemblyAI offers **zero data retention** for audio and transcripts when you have opted out of model training. Audio is processed ephemerally in memory and the transcript is returned via WebSocket — neither is persisted after the session. Certain metadata (timestamps, durations) is retained for logging and billing purposes only. This configuration should be confirmed with your account team for Spanglish Ink's production environment.
 
 **Data Flow:**
 Incoming audio → Encrypted in transit to AssemblyAI → Ephemeral processing (in-memory) → Transcript returned via WebSocket → Audio/Transcript instantly destroyed on our servers. 
