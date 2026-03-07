@@ -42,16 +42,16 @@
 ## Slide 4: Why Universal-3 Pro Streaming?
 *"Universal-3 Pro is purpose-built for exactly this use case: low-latency conversational STT on resource-constrained clients."*
 
-* **Native Multilingual & Code-Switching:** Handles English/Spanish mixing naturally within a single utterance. No manual language swapping. [cite:44][cite:47]
+* **Native Multilingual & Code-Switching:** Handles English/Spanish mixing naturally within a single utterance. No manual language swapping.
 * **Text Prompting Engine:** You can prime the streaming model with domain-specific text prompts (e.g., "Expect medical terminology and the brand name iTranslate") to aggressively correct disfluencies and enforce specific jargon.
 * **Best-in-Class Accuracy:** Directly improves end-user translation quality by ensuring the translation engine receives flawless source text.
 * **Zero Device Compute:** Massive cost savings on BOM (Bill of Materials); access the latest models without firmware updates.
-* **Optimized for Voice Agents:** Built for the "300ms latency rule" applied to short conversational utterances. [cite:31]
+* **Optimized for Voice Agents:** Built for the "300ms latency rule" applied to short conversational utterances.
 
 ---
 
 ## Slide 5: Integration with Python & TypeScript
-*Our official SDKs eliminate WebSocket complexity—your team focuses on business logic, not streaming infrastructure.* [cite:36][cite:42]
+*Our official SDKs eliminate WebSocket complexity—your team focuses on business logic, not streaming infrastructure.*
 
 **Python Backend (Orchestration Layer):**
 ```python
@@ -85,7 +85,7 @@ def on_turn(self, event: TurnEvent):
   * Use raw `pcm_s16le` encoding (no transcoding payload bloat).
   * Send audio in small, rapid chunks (100-450ms).
 * **Translation Quality:** 
-  * Wait for `TurnEvent` finalization. Translating full finalized segments preserves grammatical alignment and context better than disjointed word-by-word streaming. [cite:41][cite:50]
+  * Wait for `TurnEvent` finalization. Translating full finalized segments preserves grammatical alignment and context better than disjointed word-by-word streaming.
 
 ---
 
@@ -107,7 +107,7 @@ def on_turn(self, event: TurnEvent):
 ---
 
 ## Slide 9: Security & Compliance
-* **Enterprise-Grade Security:** AssemblyAI is SOC 2 Type 2 Certified. [cite:20]
+* **Enterprise-Grade Security:** AssemblyAI is SOC 2 Type 2 Certified.
 * **Data Privacy:** Encrypted in transit (WSS) and at rest.
 * **Zero Audio Retention:** The streaming endpoints evaluate audio ephemerally. Audio isn't retained after the session, guaranteeing user privacy for sensitive translations.
 
