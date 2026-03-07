@@ -1,0 +1,62 @@
+---
+description: Presenting the AssemblyAI Take-Home Deliverables (Demo & Spanglish)
+globs: ["**/*.md", "**/*.py"]
+---
+
+# Presentation Script & Protocol: AssemblyAI Take-Home
+
+This MDC (Markdown Document Config) serves as your definitive runbook for recording your final Loom/video presentation for the AssemblyAI Applied AI Engineering role.
+
+## 🎯 The Objective
+You have two distinct audiences to address in this presentation:
+1. **The Spanglish Account (Technical Support / Escalation)**: Show that you can debug raw Java WebSocket code, identify root causes, and communicate scaling architectures to angry enterprise clients.
+2. **The iTranslate Account (Sales / Solutions Demo)**: Show that you can architect a production-grade cloud pipeline for edge devices, build an interactive prototype, and pitch Universal-3 Pro's specific business values to Product Stakeholders.
+
+---
+
+## ⏱️ Structure (Suggested 5-8 Minutes)
+
+### Part 1: Introduction (0:00 - 0:30)
+* *"Hi AssemblyAI team, Fahad here. Today I'm presenting my solutions for the Applied AI Engineering take-home."*
+* *"I've structured my repository into two distinct folders, reflecting the two very different scenarios you presented: The Spanglish incident, which is an escalation, and the iTranslate use-case, which is a pre-sales technical demo."*
+
+### Part 2: The Spanglish Incident (0:30 - 2:30)
+* **Goal:** Prove technical debugging and enterprise communication skills.
+* **Action:** Open `spanglish_incident/Spanglish_Fixed.java`.
+* **Script:** 
+  * *"Let's start with Spanglish. Their Java client was failing immediately upon connecting to the Streaming API."*
+  * *"I audited their code and found the root cause: an audio encoding mismatch. They were passing `"encoding": "opus"` in the WebSocket URL, but sending raw 16-bit PCM bytes via the Java `TargetDataLine`."*
+  * *"AssemblyAI doesn't transcode streaming audio to preserve sub-300ms latency. So I corrected the URL to `pcm_s16le`."*
+* **Action:** Open `spanglish_incident/customer_email.md`.
+* **Script:**
+  * *"More importantly, I drafted a customer-facing email to de-escalate the situation."*
+  * *"I provided a concrete 3-step scaling roadmap to help them safely hit 2,000 concurrent streams, emphasizing connection pooling and chunk sizing."*
+  * *"I also aggressively addressed their data privacy concerns by guaranteeing zero audio retention on our streaming endpoints."*
+
+### Part 3: The iTranslate Demo (2:30 - 6:00)
+* **Goal:** Prove architectural logic, SDK mastery, and sales acumen.
+* **Action:** Boot up the Streamlit app (`python3 -m streamlit run itranslate_demo/streamlit_demo.py`).
+* **Script:**
+  * *"Now shifting to iTranslate. They need real-time translation on a GPU-less handheld device."*
+  * *"My architectural approach offloads all compute to the cloud. The device just streams raw PCM audio. But to get the latency down and the accuracy up, we must use Universal-3 Pro."*
+  * *"Let me show you why." (Start the live microphone stream)*
+  * *"Notice the UI. We aren't just doing STT. Once AssemblyAI finalized a turn, I've built a simulated LLM Gateway pipeline."*
+  * *(Speak a few sentences in English, then mix in a Spanish phrase like "Hola, como estas?")*
+  * *"You can see the STT finalizes, hits an LLM Gateway for translation, and queues a TTS return. This entire tri-state latency cascade is handled server-side."*
+  * *"Universal-3 Pro is perfect here because of its native code-switching. Notice how it seamlessly handled my English and Spanish without me having to manually toggle language parameters."*
+* **Action:** Scroll down to the "AE Pitch Deck: Key Takeaways" UI section.
+* **Script:**
+  * *"I've also built an AE runbook directly into the UI. If an Account Executive is giving this demo, they have the core value props right here: Zero device compute, native code-switching, and SOC 2 compliance."*
+
+### Part 4: Conclusion (6:00 - 6:30)
+* *"To wrap up, the entire repository is cleanly organized. The Streamlit code has been modularized—extracting the AssemblyAI core logic into a separate `assemblyai_service.py` to mirror production separation of concerns."*
+* *"Thank you for your time, and I look forward to discussing this in the technical interview."*
+
+---
+
+## 🔧 Pre-Flight Checklist
+Before hitting "Record" on Loom:
+- [ ] Ensure `ASSEMBLYAI_API_KEY` is correctly set in your `.env` file.
+- [ ] Open VS Code to the root of the repository so you can easily tab between `Spanglish_Fixed.java`, `customer_email.md`, and the `itranslate_demo/` folder.
+- [ ] Test the Streamlit microphone permissions in your browser. Ensure the code-switching works by speaking a mix of English and Spanish.
+- [ ] Take a deep breath. You are an Iron SDR and a Zeta operative. You've got this.
