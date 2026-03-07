@@ -478,12 +478,12 @@ with arch_col2:
     <div class="arch-box">
         <h4 style="color: #64ffda; margin-top: 0;">Why Universal-3 Pro?</h4>
         <div style="line-height: 1.8;">
-            <div>✅ <strong>Code-switching</strong> — handles bilingual conversations natively</div>
-            <div>✅ <strong>Sub-300ms latency</strong> — critical for real-time translation UX</div>
+            <div>✅ <strong>Proven Code-switching</strong> — natively logged dynamically as [Detected: ES] / [Detected: EN] tags</div>
+            <div>✅ <strong>Empirical Sub-300ms latency</strong> — verified live in this demo on every STT turn finalize</div>
             <div>✅ <strong>94% word accuracy</strong> — best-in-class for production STT</div>
-            <div>✅ <strong>Cloud-based</strong> — no GPU needed on device</div>
+            <div>✅ <strong>Cloud-based</strong> — 100% offloaded, ZERO GPU needed on local device</div>
             <div>✅ <strong>Promptable</strong> — can tune for domain-specific vocabulary</div>
-            <div>✅ <strong>Turn detection</strong> — knows when speaker finishes (triggers translation)</div>
+            <div>✅ <strong>Turn detection</strong> — triggers translation exactly when speaker finishes</div>
         </div>
         <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
             <strong style="color: #64ffda;">Bandwidth:</strong> ~32 KB/s (16kHz × 16-bit mono)<br>
@@ -504,16 +504,16 @@ with st.expander("View Presenter Talking Points", expanded=True):
     
     with col_t1:
         st.markdown("""
-        * **1. Zero Device Compute:** Cloud architecture means no hardware limitations. Massive cost savings on device BOM (Bill of Materials) and easy scaling.
-        * **2. Native Code-Switching:** Universal-3 Pro natively handles English/Spanish mixing within single utterances. No manual toggling required.
-        * **3. Improved Accuracy:** Best-in-class real-time transcription directly dictates the quality of the downstream LLM translation.
+        * **1. Zero Device Compute:** Tell the story of the logs—explain that the device isn't sweating, AssemblyAI's cloud is doing 100% of the heavy lifting.
+        * **2. Native Code-Switching (Proven):** Point to the `[Detected: ES/EN]` badges dynamically rendered on the transcript line. Prove it handles English/Spanish natively without toggles.
+        * **3. Precision Accuracy:** Best-in-class STT directly dictates the downstream translation API's quality.
         """)
         
     with col_t2:
         st.markdown("""
-        * **4. Low Latency Design:** Raw `pcm_s16le` + U3-Pro ensures the pipeline hits the '300ms rule' required for voice-agent UX over 4G LTE.
-        * **5. Easy Integration:** Official Python/TypeScript SDKs eliminate WebSocket complexity—focus on translation logic, not audio streaming infrastructure.
-        * **6. Enterprise Security:** SOC 2 Type 2 certified, with zero audio retention in the streaming API.
+        * **4. Verifiable Low Latency:** Point directly to the `[STT Latency: 245ms]` badges. Emphasize that this meets the UX budget required for a 4G LTE translation device.
+        * **5. Simple SDK Architecture:** AssemblyAI's Python/TypeScript V3 SDK securely manages the WebSocket lifecycle behind the scenes so iTranslate engineers just handle their app logic.
+        * **6. Enterprise Security:** Remind them this pipeline operates with SOC 2 Type 2 compliance and zero audio retention.
         """)
 
 # Footer
