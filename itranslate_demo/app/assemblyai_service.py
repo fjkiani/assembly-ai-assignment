@@ -134,13 +134,22 @@ class AssemblyAIStreamer:
             self.client.on(StreamingEvents.Termination, on_terminated)
             self.client.on(StreamingEvents.Error, on_error)
 
+            # Define a custom Prompt to bias Universal-3 Pro explicitly for Code-Switching 
+            # and iTranslate domain terminology, as supported by the v3 Streaming SDK.
+            custom_stt_prompt = (
+                "This is a bilingual conversation primarily switching between English and Spanish. "
+                "Expect medical terminology, colloquialisms, and brand names like 'iTranslate'. "
+                "Ensure accurate transcribing of Spanglish phrasing."
+            )
+
             # Following Support's advice: robust model with language detection enabled
             self.client.connect(
                 StreamingParameters(
                     speech_model="universal-streaming-multilingual",
                     sample_rate=16000,
                     language_detection=True, # Critical for Code-Switching demo
-                    disable_formatting=True # Trade formatting for latency in live translations
+                    disable_formatting=True, # Trade formatting for latency in live translations
+                    prompt=custom_stt_prompt # Custom vocabulary injection
                 )
             )
 

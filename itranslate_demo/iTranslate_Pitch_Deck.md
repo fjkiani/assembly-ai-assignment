@@ -43,6 +43,7 @@
 *"Universal-3 Pro is purpose-built for exactly this use case: low-latency conversational STT on resource-constrained clients."*
 
 * **Native Multilingual & Code-Switching:** Handles English/Spanish mixing naturally within a single utterance. No manual language swapping. [cite:44][cite:47]
+* **Text Prompting Engine:** You can prime the streaming model with domain-specific text prompts (e.g., "Expect medical terminology and the brand name iTranslate") to aggressively correct disfluencies and enforce specific jargon.
 * **Best-in-Class Accuracy:** Directly improves end-user translation quality by ensuring the translation engine receives flawless source text.
 * **Zero Device Compute:** Massive cost savings on BOM (Bill of Materials); access the latest models without firmware updates.
 * **Optimized for Voice Agents:** Built for the "300ms latency rule" applied to short conversational utterances. [cite:31]
