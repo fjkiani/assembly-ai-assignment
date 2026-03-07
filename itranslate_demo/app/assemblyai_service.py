@@ -59,28 +59,44 @@ class AssemblyAIStreamer:
                 calc_latency = (time.time() - self.turn_start_time) if self.turn_start_time else 0.0
                 
                 self.transcript_queue.put(("translating", "", lang or "UNKNOWN", calc_latency))
-                time.sleep(0.4) # Simulate LLM Gateway API call
-                
-                # Mock translation for demo UI based on what language AAI just detected
-                is_spanish = isinstance(lang, str) and lang.lower().startswith("es")
-                target_lang = "EN" if is_spanish else "ES"
-                
-                # Visually translate common phrases for a compelling demo
-                t_lower = event.transcript.lower()
-                translated_text = event.transcript
-                
-                if target_lang == "EN":
-                    if "dónde" in t_lower or "donde" in t_lower: translated_text = "Where are you from?"
-                    elif "qué pasa" in t_lower or "que pasa" in t_lower: translated_text = "What's up, friend?"
-                    elif "bien" in t_lower: translated_text = "Yes, very good."
-                    else: translated_text = f"(Translated from ES) {event.transcript}"
-                else:
-                    if "doing good" in t_lower or "how are you" in t_lower: translated_text = "Estoy bien. ¿Y tú cómo estás?"
-                    elif "thank you" in t_lower: translated_text = "Muy bien, muchas gracias."
-                    elif "hello" in t_lower: translated_text = "Hola."
-                    else: translated_text = f"(Translated from EN) {event.transcript}"
+                # Real translation via Cohere LLM (simulating the Gateway pattern)
+                try:
+                    import cohere
+                    import os
                     
-                mock_translation = f"[{target_lang}] {translated_text}" 
+                    # Determine source → target based on detected language
+                    is_spanish = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("es")
+                    is_italian = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("it")
+                    is_french  = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("fr")
+                    is_english = isinstance(lang, str) and getattr(lang, "lower", lambda: "")().startswith("en")
+                    
+                    if is_spanish or is_italian or is_french:
+                        target_lang = "EN"
+                        prompt = f"Translate the following spoken phrase directly to English. Output ONLY the raw translation, no quotes or intro: '{event.transcript}'"
+                    elif is_english:
+                        target_lang = "ES"
+                        prompt = f"Translate the following spoken phrase directly to Spanish. Output ONLY the raw translation, no quotes or intro: '{event.transcript}'"
+                    else:
+                        target_lang = "EN"
+                        prompt = f"Identify the language and translate the following phrase directly to English. Output ONLY the raw translation: '{event.transcript}'"
+                    
+                    cohere_key = os.environ.get("COHERE_API_KEY")
+                    if not cohere_key:
+                        raise ValueError("COHERE_API_KEY missing")
+                        
+                    co = cohere.Client(cohere_key)
+                    response = co.chat(
+                        model="command-a-03-2025",
+                        message=prompt,
+                        temperature=0.3
+                    )
+                    translated_text = response.text.strip().strip('"')
+                    
+                    mock_translation = f"[{target_lang}] {translated_text}"
+                except Exception as e:
+                    # Graceful fallback if Cohere fails or key is missing
+                    target_lang = "EN" if (isinstance(lang, str) and not getattr(lang, "lower", lambda: "")().startswith("en")) else "ES"
+                    mock_translation = f"[{target_lang}] (Translated from {lang[:2].upper() if lang else 'UNKNOWN'}) {event.transcript}"
                 
                 self.transcript_queue.put(("translated", mock_translation))
                 

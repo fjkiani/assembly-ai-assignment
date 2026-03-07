@@ -268,6 +268,7 @@ with col_main:
                         
                         if is_final and text.strip():
                             lines.append((text, "STT", lang, 0.0))
+                            st.session_state.transcripts.append((text, "STT", lang, 0.0))
                             st.session_state.turn_count += 1
                         
                         display_lines = lines[-15:]  # Keep last 15 actions
@@ -311,6 +312,11 @@ with col_main:
                             if state == "STT":
                                 meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[Detected: {str(line_lang).upper()}]</span>'
                                 html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">STT</span> {line_text} {meta_badge}</div>'
+                            elif state == "LLM":
+                                meta_badge = f'<span style="font-size:0.75rem; color:#8892b0; margin-left:8px;">[STT Latency: {l_latency*1000:.0f}ms]</span>' if l_latency > 0 else ""
+                                html += f'<div class="transcript-line" style="background: rgba(0, 210, 255, 0.05);"><span class="badge" style="color:{color}; border-color:{color};">LLM Gateway</span> {line_text} {meta_badge}</div>'
+                            elif state == "TTS":
+                                html += f'<div class="transcript-line" style="border-left: 2px solid {color}; padding-left: 10px;"><span class="badge" style="color:{color}; border-color:{color};">TTS Audio</span> <em>Synthesized and streamed to device</em> 🔊</div>'
                             else:
                                 html += f'<div class="transcript-line"><span class="badge" style="color:{color}; border-color:{color};">{state}</span> {line_text}</div>'
                         
@@ -325,9 +331,11 @@ with col_main:
                     elif msg[0] == "translated":
                         latency = getattr(st.session_state, "_last_latency", 0.0)
                         lines.append((msg[1], "LLM", "en", latency))
+                        st.session_state.transcripts.append((msg[1], "LLM", "en", latency))
                         
                     elif msg[0] == "tts":
                         lines.append((msg[1], "TTS", "en", 0.0))
+                        st.session_state.transcripts.append((msg[1], "TTS", "en", 0.0))
 
                     elif msg[0] == "status":
                         status_text.markdown(f"*{msg[1]}*")
