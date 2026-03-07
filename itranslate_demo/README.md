@@ -52,8 +52,19 @@ To deploy the dashboard frontend:
 2. Add your `ASSEMBLYAI_API_KEY` into the platform's Environment/Secrets manager. 
 3. *Note on `pyaudio`*: Cloud containers (like Debian instances) do not have physical hardware microphones attached. The included `packages.txt` ensures the C-level Linux audio headers (`portaudio19-dev`) compile successfully so the app boots without crashing, but the "Start Listening" button cannot capture your voice unless run locally.
 
-## 📁 Key Assets
-*   `app/app.py`: The Main Streamlit UI and dashboard logic.
-*   `app/assemblyai_service.py`: The multithreaded Python WebSocket controller handling the STT stream.
+## 📁 Architecture Mapping in Code
+
+To align with the **"Device vs. Cloud"** architectural pitch, the codebase is explicitly split into two decoupled components so the Account Executive can clearly demonstrate the offloading mechanism:
+
+### 1. The Frontend Device (`app/app.py`)
+This file represents the physical iTranslate handheld unit. It is intentionally "dumb". It contains **zero** machine learning logic and zero translation logic. Its only job is to capture the user's microphone array and render the visual dashboard metadata it receives from the cloud. 
+
+### 2. The Cloud Orchestration Engine (`app/assemblyai_service.py`)
+This file represents the powerful remote cloud backend. It executes the exact three-step "LLM Gateway" pipeline proposed in the architecture document:
+* **Step 1 (STT):** Maintains the WebSocket connection with AssemblyAI Universal-3 Pro, parsing the `.language_code` to detect Code-Switching natively.
+* **Step 2 (LLM Gateway):** Catches finalized transcripts (`end_of_turn=True`) and immediately pipes the text into the **Cohere System API (`command-a-03-2025`)** for extreme low-latency translation based on the detected language.
+* **Step 3 (TTS Synthesizer):** Packages the translated string into a simulated TTS audio ready payload and fires it down the queue back to the UI (`app.py`).
+
+### Supporting Documents
 *   `iTranslate_Pitch_Deck.md`: The 10-slide narrative and runbook for the Account Executive pitch.
 *   `approach_document.md`: The technical executive summary of the STT pipeline integration.

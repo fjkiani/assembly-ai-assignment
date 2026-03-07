@@ -1,3 +1,13 @@
+# ==============================================================================
+# ARCHITECTURE MAPPING: CLOUD ORCHESTRATION ENGINE (STT -> LLM -> TTS)
+# ==============================================================================
+# This file (`assemblyai_service.py`) represents the remote Cloud backend.
+# It handles the heavy architectural lifting entirely off-device:
+#   1. STT: Streams audio to AssemblyAI Universal-3 Pro (Code-Switching detection).
+#   2. LLM Gateway: Pipes finalized transcripts immediately into Cohere's Command AI.
+#   3. TTS: Synthesizes the translation into audio (Simulated).
+# ==============================================================================
+
 import time
 import queue
 import threading

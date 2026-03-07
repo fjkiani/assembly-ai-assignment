@@ -13,6 +13,16 @@ import os
 import time
 import threading
 import queue
+
+# ==============================================================================
+# ARCHITECTURE MAPPING: THE FRONTEND DEVICE (UI LAYER)
+# ==============================================================================
+# This file (`app.py`) represents the iTranslate handheld hardware device.
+# It contains NO machine learning models or heavy processing logic. 
+# Its sole responsibility is to render the UI, capture microphone input,
+# and display the finalized STT/LLM/TTS events pushed from the Cloud Orchestrator.
+# ==============================================================================
+
 import streamlit as st
 
 # In Streamlit Cloud, variables set in "Advanced Settings > Secrets" 
