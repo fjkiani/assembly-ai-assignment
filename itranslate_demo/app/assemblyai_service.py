@@ -32,15 +32,18 @@ from assemblyai.streaming.v3 import (
 # ================================================================
 DOMAIN_KEYTERMS = [
     # Brand names
-    "iTranslate", "Spanglish", "AssemblyAI",
-    # Medical (English)
-    "prescription", "diagnosis", "allergic", "ibuprofen",
-    "acetaminophen", "amoxicillin", "hypertension",
-    "cholesterol", "emergency room", "blood pressure",
-    # Medical (Spanish)
-    "prescripción", "diagnóstico", "emergencia",
-    "farmacia", "alergia", "dolor de cabeza",
-    "hospital", "médico",
+    "iTranslate", "AssemblyAI", "EpiPen",
+    # Clinician roles & context
+    "primary care physician", "triage nurse",
+    "attending physician", "on-call doctor",
+    # Conditions (terms the model may fumble without boost)
+    "hypertension", "type 2 diabetes",
+    "shortness of breath", "epigastric pain",
+    # Medications & doses (highest-value keyterms — unusual drug names)
+    "ibuprofen 400 milligrams", "paracetamol 500 milligrams",
+    "insulin glargine", "metformin", "amoxicillin",
+    "epinephrine auto-injector", "acetaminophen",
+    "metoprolol", "lisinopril",
 ]
 
 class AssemblyAIStreamer:
