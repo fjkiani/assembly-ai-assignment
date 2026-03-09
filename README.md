@@ -6,7 +6,7 @@ This repository contains the deliverables for the Applied AI Engineering take-ho
 
 ## Loom Videos
 https://www.loom.com/share/1ffa953511f542968bb7ed26a7db6a31 (Code walkthrough) 
-https://www.loom.com/share/fe89b27583ce44c59e33f7415611c074 (iTranslate Demo)
+https://www.loom.com/share/112cf874972f4cc5bf4b55c8a8fe04c9 (iTranslate Demo)
 
 
 ---
