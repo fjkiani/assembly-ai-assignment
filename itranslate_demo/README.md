@@ -33,6 +33,9 @@ To use your physical microphone and test the actual latency and code-switching c
 ```bash
 cd itranslate_demo/app
 pip install -r requirements.txt
+# For microphone support (local only):
+#   Linux: sudo apt-get install portaudio19-dev && pip install pyaudio
+#   macOS: brew install portaudio && pip install pyaudio
 ```
 
 **2. Setup Authentication:**
@@ -52,7 +55,7 @@ The source code has been structured specifically inside the `app/` directory to 
 To deploy the dashboard frontend:
 1. Aim the cloud main file path to: `itranslate_demo/app/app.py`
 2. Add your `ASSEMBLYAI_API_KEY` into the platform's Environment/Secrets manager. 
-3. *Note on `pyaudio`*: Cloud containers (like Debian instances) do not have physical hardware microphones attached. The included `packages.txt` ensures the C-level Linux audio headers (`portaudio19-dev`) compile successfully so the app boots without crashing, but the "Start Listening" button cannot capture your voice unless run locally.
+3. *Note on `pyaudio`*: Cloud containers have no physical microphones. PyAudio is optional; the app deploys without it. The dashboard loads for visual demo. For local mic use: install `portaudio19-dev` (Linux) or `portaudio` (macOS), then `pip install pyaudio`.
 
 ## 📁 Architecture Mapping in Code
 

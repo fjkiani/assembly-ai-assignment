@@ -1,4 +1,5 @@
-assemblyai==0.33.0
+assemblyai>=0.52.0  # 0.54.1 has streaming v3
 streamlit==1.32.0
 cohere==5.1.8
-pyaudio==0.2.14
+# pyaudio: optional for local mic; requires portaudio19-dev on Linux (see packages.txt)
+# pip install pyaudio  # for local runs with microphone

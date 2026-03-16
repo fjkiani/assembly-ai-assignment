@@ -64,7 +64,13 @@ class AssemblyAIStreamer:
         self.turn_start_time = None
 
     def _setup_pyaudio(self):
-        import pyaudio
+        try:
+            import pyaudio
+        except ImportError as e:
+            raise ImportError(
+                "PyAudio is required for microphone input. Install with: "
+                "pip install pyaudio (Linux: apt-get install portaudio19-dev first)"
+            ) from e
         self.pyaudio_instance = pyaudio.PyAudio()
         self.audio_stream = self.pyaudio_instance.open(
             format=pyaudio.paInt16,
