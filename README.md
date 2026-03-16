@@ -4,6 +4,9 @@ This repository contains the deliverables for the Applied AI Engineering take-ho
 
 ---
 
+Deployed demo:
+https://itranslate-demo.netlify.app
+
 ## Loom Videos
 https://www.loom.com/share/1ffa953511f542968bb7ed26a7db6a31 (Code walkthrough) 
 https://www.loom.com/share/112cf874972f4cc5bf4b55c8a8fe04c9 (iTranslate Demo)
