@@ -1,5 +1,8 @@
 # iTranslate Streaming Voice Pipeline
 
+Link to demo:
+https://itranslate-demo.netlify.app
+
 ## 📖 The Business Context
 
 **The Problem:** iTranslate produces a physical pocket translator device connected over 4G LTE. Their current on-device speech-to-text (STT) models drain the battery rapidly, struggle with users who switch languages mid-sentence (e.g., "Spanglish"), and introduce significant latency.
