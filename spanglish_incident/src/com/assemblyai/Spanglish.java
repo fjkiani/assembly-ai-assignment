@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Spanglish {
     // Configuration
-    private static final String API_KEY = "api_key";
+    private static final String API_KEY = "38bfafdf610949dea8ca498f0178ad6a";
     private static final int SAMPLE_RATE = 16000;
     private static final int CHANNELS = 1;
     private static final int SAMPLE_SIZE_IN_BITS = 16;
@@ -268,6 +268,15 @@ public class Spanglish {
         public void onOpen(ServerHandshake handshake) {
             System.out.println("WebSocket connection opened.");
             System.out.println("Connected to: " + API_ENDPOINT);
+
+            // v3 requires a Configure message with speech_model before streaming
+            JsonObject config = new JsonObject();
+            config.addProperty("type", "Configure");
+            config.addProperty("speech_model", "u3-rt-pro");
+            config.addProperty("language_detection", true);
+            send(gson.toJson(config));
+            System.out.println("Sent Configure message (speech_model=u3-rt-pro).");
+
             startAudioStreaming();
         }
 
