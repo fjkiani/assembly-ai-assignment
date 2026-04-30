@@ -1,7 +1,16 @@
 # iTranslate Streaming Voice Pipeline
 
-Link to demo:
-https://itranslate-demo.netlify.app
+**Live demo:** https://itranslate-demo.netlify.app
+
+## Gateway — backend & agent roadmap (`web/`)
+
+The **Next.js Interview Copilot** lives under [`web/`](web/). Anyone extending APIs, LLM orchestration, or moving toward sales/medical frameworks (MEDDPICC, SPIN, prep → live alignment) must start from:
+
+**[`web/docs/BACKEND_AGENTIC_FRAMEWORK_ROADMAP.mdc`](web/docs/BACKEND_AGENTIC_FRAMEWORK_ROADMAP.mdc)**
+
+That document is the **canonical gateway**: current backend inventory, why incremental patches failed, gap analysis, and phased multi-agent design. Run the web app from `web/` (`cd web && npm install && npm run dev`), not from this folder root.
+
+---
 
 ## 📖 The Business Context
 
@@ -84,6 +93,7 @@ All API keys and external service calls stay server-side for security:
 - **Turn detection:** Universal-3 Pro uses punctuation-based turn detection controlled by `min_turn_silence` / `max_turn_silence`.
 
 ### Supporting Documents
+- `web/docs/BACKEND_AGENTIC_FRAMEWORK_ROADMAP.mdc`: **Gateway for agents** — backend map, failure narrative, gaps, MEDDPICC/SPIN roadmap, multi-agent plan.
 - `approach_document.md`: The technical architecture document with data flow diagrams and latency analysis.
 
 ### Legacy (Streamlit)
